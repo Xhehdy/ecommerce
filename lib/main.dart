@@ -25,7 +25,7 @@ class MyApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(
-      title: 'E-Commerce App',
+      title: 'ATELIER Marketplace',
       theme: AppTheme.lightTheme,
       routerConfig: router,
     );

@@ -31,11 +31,14 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   void _signUp() async {
     if (_passwordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Passwords do not match'), backgroundColor: AppColors.error),
+        const SnackBar(
+          content: Text('Passwords do not match'),
+          backgroundColor: AppColors.error,
+        ),
       );
       return;
     }
-    
+
     setState(() => _isLoading = true);
     try {
       final email = _emailController.text.trim();
@@ -44,9 +47,12 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       await ref.read(authControllerProvider).signUp(email, password);
 
       if (mounted) {
+        ref.invalidate(profileProvider);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Registration successful. Verify your email to continue.'),
+            content: Text(
+              'Registration successful. Verify your email to continue.',
+            ),
             backgroundColor: AppColors.primary,
           ),
         );
@@ -61,7 +67,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('An unexpected error occurred'), backgroundColor: AppColors.error),
+          const SnackBar(
+            content: Text('An unexpected error occurred'),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     } finally {
@@ -83,7 +92,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 32.0,
+              vertical: 8.0,
+            ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -110,9 +122,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                 const SizedBox(height: 40),
                 TextField(
                   controller: _emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Email Address',
-                  ),
+                  decoration: const InputDecoration(labelText: 'Email Address'),
                   keyboardType: TextInputType.emailAddress,
                 ),
                 const SizedBox(height: 20),
@@ -122,7 +132,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                     labelText: 'Password',
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
                         color: AppColors.textSecondary,
                         size: 20,
                       ),
@@ -142,7 +154,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                     labelText: 'Confirm Password',
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                        _obscureConfirmPassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
                         color: AppColors.textSecondary,
                         size: 20,
                       ),
@@ -162,7 +176,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                       ? const SizedBox(
                           height: 20,
                           width: 20,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.0),
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.0,
+                          ),
                         )
                       : const Text('CREATE ACCOUNT'),
                 ),
@@ -172,7 +189,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                   children: [
                     const Text(
                       "Already have an account? ",
-                      style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 14,
+                      ),
                     ),
                     InkWell(
                       onTap: () => context.pop(),

@@ -34,7 +34,7 @@ class Product {
             .toList();
       }
     }
-    
+
     return Product(
       id: json['id'] as String,
       sellerId: json['seller_id'] as String,
@@ -45,7 +45,9 @@ class Product {
       condition: json['condition'] as String?,
       status: json['status'] ?? 'available',
       location: json['location'] as String?,
-      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : null,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : null,
       images: imagesList..sort((a, b) => a.sortOrder.compareTo(b.sortOrder)),
     );
   }

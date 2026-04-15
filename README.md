@@ -1,17 +1,68 @@
-# ecommerce
+# ATELIER Marketplace
 
-A new Flutter project.
+ATELIER Marketplace is a Flutter + Supabase final-year project for a campus marketplace. Students can create accounts, post listings, discover products, save favorites, place basic orders, and track both purchases and sales.
 
-## Getting Started
+## What the app currently supports
 
-This project is a starting point for a Flutter application.
+- Email sign up and sign in with Supabase Auth
+- Automatic profile creation plus editable profile details
+- Marketplace home feed with category browsing
+- Product details, favorites, and report listing flow
+- Create listing, edit listing, image upload, and mark sold/available
+- Search with keyword, category, price filters, sorting, and recent searches
+- Basic order creation plus purchase and sales history
 
-A few resources to get you started if this is your first Flutter project:
+## Stack
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+- Flutter
+- Riverpod
+- go_router
+- Supabase Auth
+- Supabase Postgres
+- Supabase Storage
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Project structure
+
+The codebase follows a feature-first layout.
+
+```text
+lib/
+  app/
+  core/
+  features/
+    auth/
+    marketplace/
+supabase/
+  schema.sql
+```
+
+`marketplace_app_build_structure.md` contains the original phase plan and feature breakdown used to shape the project.
+
+## Setup
+
+1. Install Flutter and confirm `flutter doctor` is healthy.
+2. Create a Supabase project.
+3. Run the SQL in `supabase/schema.sql` inside the Supabase SQL editor.
+4. Create any seed categories you want to demo.
+5. Update the Supabase project URL and anon key in `lib/main.dart`.
+6. Run `flutter pub get`.
+7. Start the app with `flutter run`.
+
+## Demo routes
+
+- `/login`
+- `/signup`
+- `/home`
+- `/search`
+- `/product/:id`
+- `/sell`
+- `/favorites`
+- `/profile`
+- `/my-listings`
+- `/orders`
+
+## Notes
+
+- The current order flow is a basic transaction-record feature for project demonstration. It creates an order, records the item, and marks the listing as sold.
+- Admin tooling is intentionally out of scope for this project version.
+- The checked-in widget test is a lightweight login-screen smoke test. Full Flutter test execution on this machine still depends on the local Flutter SDK having the `flutter_tester` artifact installed.

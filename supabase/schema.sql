@@ -1,6 +1,8 @@
 -- supabase/schema.sql
 -- Initial Schema for Marketplace App
 
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- 1. Profiles Table (extends Supabase Auth Users)
 CREATE TABLE profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -19,6 +21,17 @@ CREATE TABLE categories (
     name TEXT NOT NULL,
     slug TEXT UNIQUE NOT NULL
 );
+
+INSERT INTO categories (name, slug)
+VALUES
+    ('Electronics', 'electronics'),
+    ('Fashion', 'fashion'),
+    ('Books', 'books'),
+    ('Hostel Essentials', 'hostel-essentials'),
+    ('Beauty', 'beauty'),
+    ('Services', 'services')
+ON CONFLICT (slug) DO UPDATE
+SET name = EXCLUDED.name;
 
 -- 3. Products Table
 CREATE TABLE products (
@@ -65,7 +78,8 @@ CREATE TABLE order_items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
     product_id UUID NOT NULL REFERENCES products(id),
-    price DECIMAL(10, 2) NOT NULL
+    price DECIMAL(10, 2) NOT NULL,
+    UNIQUE (product_id)
 );
 
 -- 8. Reports Table (for reporting listings/users)
@@ -75,6 +89,19 @@ CREATE TABLE reports (
     product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     reason TEXT NOT NULL,
     status TEXT DEFAULT 'pending', -- 'pending', 'reviewed', 'resolved'
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 9. Recent Searches Table
+CREATE TABLE recent_searches (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    query TEXT DEFAULT '',
+    category_id INT REFERENCES categories(id) ON DELETE SET NULL,
+    min_price DECIMAL(10, 2),
+    max_price DECIMAL(10, 2),
+    sort_by TEXT DEFAULT 'newest',
+    available_only BOOLEAN DEFAULT true,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -93,6 +120,7 @@ ALTER TABLE favorites ENABLE ROW LEVEL SECURITY;
 ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE reports ENABLE ROW LEVEL SECURITY;
+ALTER TABLE recent_searches ENABLE ROW LEVEL SECURITY;
 
 -- Profiles:
 -- Anyone can view profiles (to see sellers).
@@ -114,13 +142,13 @@ ON categories FOR SELECT USING (true);
 -- Products:
 -- Anyone can view available products.
 CREATE POLICY "Products are viewable by everyone."
-ON products FOR SELECT USING (true);
+ON products FOR SELECT USING (status = 'available' OR seller_id = auth.uid());
 -- Sellers can insert their own products.
 CREATE POLICY "Sellers can create products."
 ON products FOR INSERT WITH CHECK (auth.uid() = seller_id);
 -- Sellers can update their own products.
 CREATE POLICY "Sellers can update own products."
-ON products FOR UPDATE USING (auth.uid() = seller_id);
+ON products FOR UPDATE USING (auth.uid() = seller_id) WITH CHECK (auth.uid() = seller_id);
 -- Sellers can delete their own products.
 CREATE POLICY "Sellers can delete own products."
 ON products FOR DELETE USING (auth.uid() = seller_id);
@@ -128,10 +156,27 @@ ON products FOR DELETE USING (auth.uid() = seller_id);
 -- Product Images:
 -- Anyone can view product images.
 CREATE POLICY "Product images are viewable by everyone."
-ON product_images FOR SELECT USING (true);
+ON product_images FOR SELECT USING (
+    EXISTS (
+        SELECT 1
+        FROM products
+        WHERE id = product_images.product_id
+          AND (status = 'available' OR seller_id = auth.uid())
+    )
+);
 -- Sellers can manage images for their products.
-CREATE POLICY "Sellers can manage images for own products."
-ON product_images FOR ALL USING (
+CREATE POLICY "Sellers can insert images for own products."
+ON product_images FOR INSERT WITH CHECK (
+    EXISTS (SELECT 1 FROM products WHERE id = product_images.product_id AND seller_id = auth.uid())
+);
+CREATE POLICY "Sellers can update images for own products."
+ON product_images FOR UPDATE USING (
+    EXISTS (SELECT 1 FROM products WHERE id = product_images.product_id AND seller_id = auth.uid())
+) WITH CHECK (
+    EXISTS (SELECT 1 FROM products WHERE id = product_images.product_id AND seller_id = auth.uid())
+);
+CREATE POLICY "Sellers can delete images for own products."
+ON product_images FOR DELETE USING (
     EXISTS (SELECT 1 FROM products WHERE id = product_images.product_id AND seller_id = auth.uid())
 );
 
@@ -173,6 +218,59 @@ ON order_items FOR INSERT WITH CHECK (
     )
 );
 
+CREATE OR REPLACE FUNCTION public.create_marketplace_order(target_product_id UUID)
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    current_user_id UUID := auth.uid();
+    listing_record products%ROWTYPE;
+    new_order_id UUID;
+BEGIN
+    IF current_user_id IS NULL THEN
+        RAISE EXCEPTION 'Authentication required.';
+    END IF;
+
+    SELECT *
+    INTO listing_record
+    FROM products
+    WHERE id = target_product_id
+    FOR UPDATE;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Listing not found.';
+    END IF;
+
+    IF listing_record.seller_id = current_user_id THEN
+        RAISE EXCEPTION 'You cannot order your own listing.';
+    END IF;
+
+    IF listing_record.status <> 'available' THEN
+        RAISE EXCEPTION 'Listing is no longer available.';
+    END IF;
+
+    INSERT INTO orders (buyer_id, seller_id, total_amount, status)
+    VALUES (
+        current_user_id,
+        listing_record.seller_id,
+        listing_record.price,
+        'pending'
+    )
+    RETURNING id INTO new_order_id;
+
+    INSERT INTO order_items (order_id, product_id, price)
+    VALUES (new_order_id, listing_record.id, listing_record.price);
+
+    UPDATE products
+    SET status = 'sold'
+    WHERE id = listing_record.id;
+
+    RETURN new_order_id;
+END;
+$$;
+
 -- Reports:
 -- Authenticated users can create reports.
 CREATE POLICY "Users can create reports."
@@ -181,3 +279,61 @@ ON reports FOR INSERT WITH CHECK (auth.uid() = reporter_id);
 CREATE POLICY "Users can view own reports."
 ON reports FOR SELECT USING (auth.uid() = reporter_id);
 
+-- Recent searches:
+CREATE POLICY "Users can view own recent searches."
+ON recent_searches FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own recent searches."
+ON recent_searches FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can delete own recent searches."
+ON recent_searches FOR DELETE USING (auth.uid() = user_id);
+
+-- ==========================================
+-- PROFILE AUTOMATION
+-- ==========================================
+
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    INSERT INTO public.profiles (id, email)
+    VALUES (NEW.id, NEW.email)
+    ON CONFLICT (id) DO NOTHING;
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER on_auth_user_created
+AFTER INSERT ON auth.users
+FOR EACH ROW
+EXECUTE FUNCTION public.handle_new_user();
+
+-- ==========================================
+-- STORAGE
+-- ==========================================
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('product-images', 'product-images', true)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY "Public can view product image files."
+ON storage.objects FOR SELECT
+USING (bucket_id = 'product-images');
+
+CREATE POLICY "Authenticated users can upload product image files."
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (bucket_id = 'product-images' AND owner = auth.uid());
+
+CREATE POLICY "Users can update own product image files."
+ON storage.objects FOR UPDATE
+TO authenticated
+USING (bucket_id = 'product-images' AND owner = auth.uid())
+WITH CHECK (bucket_id = 'product-images' AND owner = auth.uid());
+
+CREATE POLICY "Users can delete own product image files."
+ON storage.objects FOR DELETE
+TO authenticated
+USING (bucket_id = 'product-images' AND owner = auth.uid());
