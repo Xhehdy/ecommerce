@@ -44,15 +44,23 @@ class FavoritesScreen extends ConsumerWidget {
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(24),
                       border: Border.all(color: AppColors.border),
                     ),
                     child: Column(
                       children: [
-                        const Icon(
-                          Icons.favorite_border,
-                          size: 48,
-                          color: AppColors.textSecondary,
+                        Container(
+                          height: 72,
+                          width: 72,
+                          decoration: const BoxDecoration(
+                            color: AppColors.surfaceMuted,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.favorite_border,
+                            size: 36,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -66,6 +74,11 @@ class FavoritesScreen extends ConsumerWidget {
                           style: Theme.of(context).textTheme.bodyMedium,
                           textAlign: TextAlign.center,
                         ),
+                        const SizedBox(height: 18),
+                        ElevatedButton(
+                          onPressed: () => context.go('/home'),
+                          child: const Text('BROWSE LISTINGS'),
+                        ),
                       ],
                     ),
                   ),
@@ -73,18 +86,73 @@ class FavoritesScreen extends ConsumerWidget {
               );
             }
 
-            return GridView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 240,
-                mainAxisExtent: 290,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 18,
-              ),
-              itemCount: products.length,
-              itemBuilder: (context, index) {
-                return ProductCard(product: products[index]);
-              },
+            return CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    child: Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            height: 52,
+                            width: 52,
+                            decoration: const BoxDecoration(
+                              color: AppColors.surfaceMuted,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.favorite,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Saved for later',
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleMedium,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${products.length} item${products.length == 1 ? '' : 's'} you may want to come back to.',
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                  sliver: SliverGrid(
+                    gridDelegate:
+                        const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 240,
+                          mainAxisExtent: 290,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 18,
+                        ),
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      return ProductCard(product: products[index]);
+                    }, childCount: products.length),
+                  ),
+                ),
+              ],
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),

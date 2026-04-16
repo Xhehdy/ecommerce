@@ -19,6 +19,14 @@ final profileProvider = FutureProvider<UserProfile?>((ref) async {
   return authRepository.getCurrentUserProfile();
 });
 
+final publicProfileProvider = FutureProvider.family<UserProfile?, String>((
+  ref,
+  userId,
+) async {
+  final authRepository = ref.watch(authRepositoryProvider);
+  return authRepository.getProfileById(userId);
+});
+
 final authControllerProvider = Provider<AuthController>((ref) {
   return AuthController(ref.watch(authRepositoryProvider));
 });

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/colors.dart';
+import '../../../../core/utils/currency_formatter.dart';
 import '../../application/marketplace_providers.dart';
 import '../../data/models/product_model.dart';
 import '../../data/repositories/marketplace_repository.dart';
@@ -74,15 +75,23 @@ class MyListingsScreen extends ConsumerWidget {
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(24),
                       border: Border.all(color: AppColors.border),
                     ),
                     child: Column(
                       children: [
-                        const Icon(
-                          Icons.inventory_2_outlined,
-                          size: 48,
-                          color: AppColors.textSecondary,
+                        Container(
+                          height: 72,
+                          width: 72,
+                          decoration: const BoxDecoration(
+                            color: AppColors.surfaceMuted,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.inventory_2_outlined,
+                            size: 36,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -96,7 +105,7 @@ class MyListingsScreen extends ConsumerWidget {
                           style: Theme.of(context).textTheme.bodyMedium,
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 18),
                         ElevatedButton(
                           onPressed: () => context.push('/sell'),
                           child: const Text('CREATE LISTING'),
@@ -108,12 +117,49 @@ class MyListingsScreen extends ConsumerWidget {
               );
             }
 
+            final liveListings = products.where((product) {
+              return product.status != 'sold';
+            }).length;
+            final soldListings = products.length - liveListings;
+            final portfolioValue = products.fold<double>(0, (total, product) {
+              return total + product.price;
+            });
+
             return ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: products.length,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              itemCount: products.length + 1,
               separatorBuilder: (_, _) => const SizedBox(height: 16),
               itemBuilder: (context, index) {
-                final product = products[index];
+                if (index == 0) {
+                  return Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Wrap(
+                      spacing: 14,
+                      runSpacing: 14,
+                      children: [
+                        _ListingSummaryChip(
+                          label: 'Live now',
+                          value: '$liveListings',
+                        ),
+                        _ListingSummaryChip(
+                          label: 'Sold',
+                          value: '$soldListings',
+                        ),
+                        _ListingSummaryChip(
+                          label: 'Portfolio value',
+                          value: formatNaira(portfolioValue),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                final product = products[index - 1];
                 final imageUrl = product.images.isNotEmpty
                     ? product.images.first.imageUrl
                     : null;
@@ -121,11 +167,11 @@ class MyListingsScreen extends ConsumerWidget {
                 return Container(
                   decoration: BoxDecoration(
                     color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: AppColors.border),
                   ),
                   child: InkWell(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(20),
                     onTap: () => context.push('/product/${product.id}'),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
@@ -135,13 +181,13 @@ class MyListingsScreen extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(14),
                                 child: SizedBox(
-                                  height: 88,
-                                  width: 88,
+                                  height: 92,
+                                  width: 92,
                                   child: imageUrl == null
                                       ? Container(
-                                          color: AppColors.background,
+                                          color: AppColors.surfaceMuted,
                                           child: const Icon(
                                             Icons.image_not_supported_outlined,
                                             color: AppColors.textSecondary,
@@ -166,7 +212,7 @@ class MyListingsScreen extends ConsumerWidget {
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      '\$${product.price.toStringAsFixed(2)}',
+                                      formatNaira(product.price),
                                       style: Theme.of(context)
                                           .textTheme
                                           .titleMedium
@@ -174,6 +220,16 @@ class MyListingsScreen extends ConsumerWidget {
                                             color: AppColors.primary,
                                             fontWeight: FontWeight.bold,
                                           ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      product.condition?.trim().isNotEmpty ==
+                                              true
+                                          ? product.condition!
+                                          : 'Ready for campus pickup',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium,
                                     ),
                                     const SizedBox(height: 8),
                                     Container(
@@ -250,6 +306,39 @@ class MyListingsScreen extends ConsumerWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ListingSummaryChip extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _ListingSummaryChip({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceMuted,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            value,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: AppColors.primaryDark,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(label, style: Theme.of(context).textTheme.bodySmall),
+        ],
       ),
     );
   }

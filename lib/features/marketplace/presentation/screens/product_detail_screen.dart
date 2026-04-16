@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../app/theme/colors.dart';
+import '../../../../core/utils/currency_formatter.dart';
 import '../../../auth/application/auth_provider.dart';
+import '../../../auth/data/models/user_profile_model.dart';
 import '../../application/marketplace_providers.dart';
 import '../../data/repositories/marketplace_repository.dart';
 
@@ -10,6 +13,42 @@ class ProductDetailScreen extends ConsumerWidget {
   final String productId;
 
   const ProductDetailScreen({super.key, required this.productId});
+
+  String _initialsFor(UserProfile? profile) {
+    final source = profile?.fullName?.trim().isNotEmpty == true
+        ? profile!.fullName!.trim()
+        : profile?.email.trim() ?? 'Seller';
+    final initials = source
+        .split(RegExp(r'\s+|@'))
+        .where((part) => part.isNotEmpty)
+        .take(2)
+        .map((part) => part[0].toUpperCase())
+        .join();
+
+    return initials.isEmpty ? 'S' : initials;
+  }
+
+  String _sellerHeadline(UserProfile? profile) {
+    final faculty = profile?.faculty?.trim();
+    if (faculty != null && faculty.isNotEmpty) {
+      return '$faculty student seller';
+    }
+
+    return 'Campus marketplace seller';
+  }
+
+  String _sellerTrustNote(UserProfile? profile) {
+    if (profile?.matricNumber?.trim().isNotEmpty == true &&
+        profile?.phone?.trim().isNotEmpty == true) {
+      return 'Profile details completed for smoother buyer trust and meetup coordination.';
+    }
+
+    if (profile?.matricNumber?.trim().isNotEmpty == true) {
+      return 'Seller profile includes campus identity details.';
+    }
+
+    return 'Meetup details can be confirmed after you place an order.';
+  }
 
   Future<void> _toggleProductStatus(
     BuildContext context,
@@ -238,6 +277,9 @@ class ProductDetailScreen extends ConsumerWidget {
     final currentUser = ref.watch(currentUserProvider);
     final favoriteIdsAsync = ref.watch(favoriteProductIdsProvider);
     final product = productAsync.asData?.value;
+    final sellerProfileAsync = product == null
+        ? null
+        : ref.watch(publicProfileProvider(product.sellerId));
     final isOwner = product != null && currentUser?.id == product.sellerId;
     final isFavorite =
         product != null &&
@@ -316,38 +358,178 @@ class ProductDetailScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '\$${product.price.toStringAsFixed(2)}',
+                      formatNaira(product.price),
                       style: Theme.of(context).textTheme.displayMedium
                           ?.copyWith(color: AppColors.primary),
                     ),
                     const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: product.status == 'sold'
-                            ? Colors.orange.shade50
-                            : Colors.green.shade50,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        product.status == 'sold' ? 'Sold' : 'Available',
-                        style: TextStyle(
-                          color: product.status == 'sold'
-                              ? Colors.orange.shade800
-                              : Colors.green.shade800,
-                          fontWeight: FontWeight.w600,
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: product.status == 'sold'
+                                ? Colors.orange.shade50
+                                : Colors.green.shade50,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            product.status == 'sold' ? 'Sold' : 'Available',
+                            style: TextStyle(
+                              color: product.status == 'sold'
+                                  ? Colors.orange.shade800
+                                  : Colors.green.shade800,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
-                      ),
+                        if (product.condition != null)
+                          Chip(
+                            label: Text('Condition: ${product.condition}'),
+                            backgroundColor: AppColors.background,
+                          ),
+                        Chip(
+                          label: Text(
+                            product.location?.trim().isNotEmpty == true
+                                ? 'Pickup: ${product.location}'
+                                : 'Campus pickup',
+                          ),
+                          backgroundColor: AppColors.background,
+                        ),
+                        Chip(
+                          label: Text(
+                            product.createdAt == null
+                                ? 'Listed recently'
+                                : 'Listed ${product.createdAt!.day}/${product.createdAt!.month}/${product.createdAt!.year}',
+                          ),
+                          backgroundColor: AppColors.background,
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                    if (product.condition != null)
-                      Chip(
-                        label: Text('Condition: ${product.condition}'),
-                        backgroundColor: AppColors.background,
+                    const SizedBox(height: 24),
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: AppColors.border),
                       ),
+                      child: sellerProfileAsync == null
+                          ? const SizedBox.shrink()
+                          : sellerProfileAsync.when(
+                              data: (sellerProfile) {
+                                return Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      height: 56,
+                                      width: 56,
+                                      decoration: const BoxDecoration(
+                                        color: AppColors.surfaceMuted,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        _initialsFor(sellerProfile),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium
+                                            ?.copyWith(
+                                              color: AppColors.primaryDark,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 14),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            isOwner
+                                                ? 'You are the seller'
+                                                : sellerProfile?.displayName ??
+                                                      'Marketplace seller',
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.titleMedium,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            _sellerHeadline(sellerProfile),
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.bodyMedium,
+                                          ),
+                                          const SizedBox(height: 10),
+                                          Wrap(
+                                            spacing: 8,
+                                            runSpacing: 8,
+                                            children: [
+                                              if (sellerProfile?.matricNumber
+                                                      ?.trim()
+                                                      .isNotEmpty ==
+                                                  true)
+                                                _TrustBadge(
+                                                  label: 'Campus identity',
+                                                  icon: Icons.verified_user,
+                                                ),
+                                              _TrustBadge(
+                                                label:
+                                                    product.location
+                                                            ?.trim()
+                                                            .isNotEmpty ==
+                                                        true
+                                                    ? 'Meetup ready'
+                                                    : 'Campus pickup',
+                                                icon: Icons.place_outlined,
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 10),
+                                          Text(
+                                            _sellerTrustNote(sellerProfile),
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.bodySmall,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                              loading: () => const SizedBox(
+                                height: 56,
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              ),
+                              error: (_, _) => Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Seller details',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleMedium,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  const Text(
+                                    'This seller can still be contacted through the order flow.',
+                                  ),
+                                ],
+                              ),
+                            ),
+                    ),
                     const SizedBox(height: 24),
                     Text(
                       'Description',
@@ -357,6 +539,37 @@ class ProductDetailScreen extends ConsumerWidget {
                     Text(
                       product.description ?? 'No description provided.',
                       style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                    const SizedBox(height: 20),
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceMuted,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Why this listing feels safe',
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
+                          const SizedBox(height: 10),
+                          const _DetailBullet(
+                            text:
+                                'Prices are shown upfront so buyers know the deal before messaging.',
+                          ),
+                          const _DetailBullet(
+                            text:
+                                'Orders create a visible transaction record for both buyer and seller.',
+                          ),
+                          _DetailBullet(
+                            text: product.location?.trim().isNotEmpty == true
+                                ? 'Preferred meetup is ${product.location}, which keeps the exchange campus-friendly.'
+                                : 'This seller is set up for campus meetup or direct handover.',
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 48),
                     if (isOwner) ...[
@@ -394,6 +607,67 @@ class ProductDetailScreen extends ConsumerWidget {
         ),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Failed to load item: $e')),
+      ),
+    );
+  }
+}
+
+class _TrustBadge extends StatelessWidget {
+  final String label;
+  final IconData icon;
+
+  const _TrustBadge({required this.label, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceMuted,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: AppColors.primaryDark),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailBullet extends StatelessWidget {
+  final String text;
+
+  const _DetailBullet({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(top: 4),
+            child: Icon(
+              Icons.check_circle_outline,
+              size: 16,
+              color: AppColors.primary,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(text, style: Theme.of(context).textTheme.bodySmall),
+          ),
+        ],
       ),
     );
   }

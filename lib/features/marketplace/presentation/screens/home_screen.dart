@@ -69,14 +69,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
-  String _displayNameFromProfile(String? rawValue) {
+  String? _firstNameFromProfile(String? rawValue) {
     final normalizedValue = rawValue?.trim() ?? '';
     if (normalizedValue.isEmpty) {
-      return 'there';
-    }
-
-    if (normalizedValue.contains('@')) {
-      return normalizedValue.split('@').first;
+      return null;
     }
 
     return normalizedValue.split(' ').first;
@@ -111,10 +107,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final categoriesAsync = ref.watch(categoriesProvider);
     final feedAsync = ref.watch(homeFeedProvider);
     final profileAsync = ref.watch(profileProvider);
+    final profile = profileAsync.asData?.value;
     final categories = categoriesAsync.asData?.value ?? const <Category>[];
-    final displayName = _displayNameFromProfile(
-      profileAsync.asData?.value?.displayName,
-    );
+    final firstName = _firstNameFromProfile(profile?.fullName);
+    final welcomeTitle = firstName == null
+        ? 'Welcome back'
+        : 'Welcome back, $firstName';
     final totalLiveListings = feedAsync.asData?.value.length ?? 0;
     final selectedCategoryLabel = _categoryLabelFor(
       categories,
@@ -183,7 +181,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 6, 16, 8),
                 child: Container(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [AppColors.primaryDark, AppColors.primary],
@@ -204,8 +202,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
+                          horizontal: 10,
+                          vertical: 6,
                         ),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.16),
@@ -216,32 +214,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           style: TextStyle(
                             color: AppColors.white,
                             fontWeight: FontWeight.w600,
+                            fontSize: 12,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 14),
                       Text(
-                        'Welcome back,\n$displayName',
-                        style: Theme.of(context).textTheme.displayMedium
-                            ?.copyWith(
-                              color: AppColors.white,
-                              fontWeight: FontWeight.w800,
-                              height: 1.1,
-                            ),
-                      ),
-                      const SizedBox(height: 10),
-                      const Text(
-                        'Browse campus listings, post what you want to sell, and keep an eye on your orders in one place.',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          height: 1.45,
-                          fontSize: 15,
+                        welcomeTitle,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: AppColors.white,
+                          fontWeight: FontWeight.w800,
+                          height: 1.05,
                         ),
                       ),
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 6),
+                      Text(
+                        profile?.faculty?.trim().isNotEmpty == true
+                            ? '${profile!.faculty} marketplace finds, ready for quick campus meetups.'
+                            : 'Fresh campus finds, ready for quick meetups and safer student-to-student selling.',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          height: 1.4,
+                          fontSize: 13.5,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
                       Wrap(
-                        spacing: 10,
-                        runSpacing: 10,
+                        spacing: 8,
+                        runSpacing: 8,
                         children: [
                           _HeroPill(
                             label: '$totalLiveListings live listings',
@@ -253,29 +253,81 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 14),
                       Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
+                        spacing: 10,
+                        runSpacing: 10,
                         children: [
                           _QuickActionButton(
-                            label: 'Sell an Item',
+                            label: 'Sell',
                             icon: Icons.add_circle_outline,
                             onTap: () => context.push('/sell'),
                           ),
                           _QuickActionButton(
-                            label: 'View Orders',
+                            label: 'Orders',
                             icon: Icons.receipt_long_outlined,
                             onTap: () => context.go('/orders'),
-                          ),
-                          _QuickActionButton(
-                            label: 'Search',
-                            icon: Icons.search_outlined,
-                            onTap: () => context.go('/search'),
                           ),
                         ],
                       ),
                     ],
+                  ),
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+                child: Material(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(22),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(22),
+                    onTap: () => context.go('/search'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.search_rounded,
+                            color: AppColors.textSecondary,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Search for phones, clothes, textbooks...',
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium?.copyWith(fontSize: 15),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceMuted,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: const Text(
+                              'Open',
+                              style: TextStyle(
+                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -295,7 +347,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             else if (categories.isNotEmpty)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -327,7 +379,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       const SizedBox(height: 14),
                       SizedBox(
-                        height: 52,
+                        height: 46,
                         child: ListView(
                           scrollDirection: Axis.horizontal,
                           children: [
@@ -371,11 +423,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   final subtitle = products.isEmpty
                       ? 'Start with one great listing and build the marketplace from there.'
                       : _selectedCategoryId == null
-                      ? '${products.length} listings are live right now.'
+                      ? '${products.length} listings ready for quick campus deals.'
                       : '${filteredProducts.length} listing${filteredProducts.length == 1 ? '' : 's'} in $selectedCategoryLabel.';
 
                   return Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+                    padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -499,23 +551,24 @@ class _QuickActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white.withValues(alpha: 0.12),
-      borderRadius: BorderRadius.circular(18),
+      color: Colors.white.withValues(alpha: 0.10),
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: AppColors.white, size: 18),
-              const SizedBox(width: 8),
+              Icon(icon, color: AppColors.white, size: 16),
+              const SizedBox(width: 7),
               Text(
                 label,
                 style: const TextStyle(
                   color: AppColors.white,
                   fontWeight: FontWeight.w700,
+                  fontSize: 13,
                 ),
               ),
             ],
@@ -535,7 +588,7 @@ class _HeroPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(999),
@@ -543,13 +596,14 @@ class _HeroPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: AppColors.white),
-          const SizedBox(width: 8),
+          Icon(icon, size: 14, color: AppColors.white),
+          const SizedBox(width: 7),
           Text(
             label,
             style: const TextStyle(
               color: AppColors.white,
               fontWeight: FontWeight.w600,
+              fontSize: 12.5,
             ),
           ),
         ],

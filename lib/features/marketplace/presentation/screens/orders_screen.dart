@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/colors.dart';
+import '../../../../core/utils/currency_formatter.dart';
 import '../../application/marketplace_providers.dart';
 import '../../data/models/order_model.dart';
 import '../widgets/marketplace_navigation.dart';
@@ -33,7 +35,11 @@ class OrdersScreen extends ConsumerWidget {
               emptyTitle: 'No purchases yet',
               emptyMessage:
                   'Place an order from a product page and it will show up here.',
+              secondaryMessage:
+                  'Browse the marketplace, compare listings, and your next order will be tracked here from the moment you confirm.',
               counterpartyLabel: 'Seller',
+              actionLabel: 'Browse Listings',
+              actionRoute: '/home',
               onRefresh: (ref) async {
                 ref.invalidate(purchaseOrdersProvider);
                 await ref.read(purchaseOrdersProvider.future);
@@ -44,7 +50,11 @@ class OrdersScreen extends ConsumerWidget {
               emptyTitle: 'No sales yet',
               emptyMessage:
                   'When someone orders one of your listings, it will appear here.',
+              secondaryMessage:
+                  'Strong photos, clear pricing, and a complete profile make buyers trust your listings faster.',
               counterpartyLabel: 'Buyer',
+              actionLabel: 'Open My Listings',
+              actionRoute: '/my-listings',
               onRefresh: (ref) async {
                 ref.invalidate(salesOrdersProvider);
                 await ref.read(salesOrdersProvider.future);
@@ -61,14 +71,20 @@ class _OrdersList extends ConsumerWidget {
   final AsyncValue<List<MarketplaceOrder>> ordersAsync;
   final String emptyTitle;
   final String emptyMessage;
+  final String secondaryMessage;
   final String counterpartyLabel;
+  final String actionLabel;
+  final String actionRoute;
   final Future<void> Function(WidgetRef ref) onRefresh;
 
   const _OrdersList({
     required this.ordersAsync,
     required this.emptyTitle,
     required this.emptyMessage,
+    required this.secondaryMessage,
     required this.counterpartyLabel,
+    required this.actionLabel,
+    required this.actionRoute,
     required this.onRefresh,
   });
 
@@ -86,15 +102,23 @@ class _OrdersList extends ConsumerWidget {
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(24),
                     border: Border.all(color: AppColors.border),
                   ),
                   child: Column(
                     children: [
-                      const Icon(
-                        Icons.receipt_long_outlined,
-                        size: 48,
-                        color: AppColors.textSecondary,
+                      Container(
+                        height: 72,
+                        width: 72,
+                        decoration: const BoxDecoration(
+                          color: AppColors.surfaceMuted,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.receipt_long_outlined,
+                          size: 36,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -107,6 +131,17 @@ class _OrdersList extends ConsumerWidget {
                         emptyMessage,
                         style: Theme.of(context).textTheme.bodyMedium,
                         textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        secondaryMessage,
+                        style: Theme.of(context).textTheme.bodySmall,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: () => context.go(actionRoute),
+                        child: Text(actionLabel.toUpperCase()),
                       ),
                     ],
                   ),
@@ -129,11 +164,14 @@ class _OrdersList extends ConsumerWidget {
               final createdAtLabel = createdAt == null
                   ? 'Unknown date'
                   : '${createdAt.day}/${createdAt.month}/${createdAt.year}';
+              final statusLabel = order.status == 'pending'
+                  ? 'Awaiting meetup'
+                  : order.status.replaceAll('_', ' ').toUpperCase();
 
               return Container(
                 decoration: BoxDecoration(
                   color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: AppColors.border),
                 ),
                 child: Padding(
@@ -173,7 +211,7 @@ class _OrdersList extends ConsumerWidget {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  '\$${order.totalAmount.toStringAsFixed(2)}',
+                                  formatNaira(order.totalAmount),
                                   style: Theme.of(context).textTheme.titleMedium
                                       ?.copyWith(
                                         color: AppColors.primary,
@@ -188,6 +226,13 @@ class _OrdersList extends ConsumerWidget {
                                 const SizedBox(height: 4),
                                 Text(
                                   'Created: $createdAtLabel',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  order.role == MarketplaceOrderRole.buyer
+                                      ? 'Pickup or delivery details can be coordinated after confirmation.'
+                                      : 'Keep the buyer updated so this sale feels reliable.',
                                   style: Theme.of(context).textTheme.bodySmall,
                                 ),
                               ],
@@ -208,7 +253,7 @@ class _OrdersList extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
-                          order.status.toUpperCase(),
+                          statusLabel,
                           style: TextStyle(
                             color: order.status == 'pending'
                                 ? Colors.orange.shade800

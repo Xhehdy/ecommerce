@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/theme/colors.dart';
+import '../../../../core/utils/currency_formatter.dart';
 import '../../application/marketplace_providers.dart';
 import '../../data/models/category_model.dart';
 import '../../data/models/search_models.dart';
@@ -89,7 +90,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
             child: Container(
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: AppColors.surface,
                 borderRadius: BorderRadius.circular(24),
@@ -111,18 +112,21 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   Row(
                     children: [
                       Expanded(
-                        child: TextField(
-                          controller: _queryController,
-                          textInputAction: TextInputAction.search,
-                          onSubmitted: (_) => _applyCurrentQuery(),
-                          decoration: const InputDecoration(
-                            labelText: 'Search products',
-                            hintText: 'Try shoes, phone, textbook...',
-                            prefixIcon: Icon(Icons.search),
+                        child: SizedBox(
+                          height: 56,
+                          child: TextField(
+                            controller: _queryController,
+                            textInputAction: TextInputAction.search,
+                            onSubmitted: (_) => _applyCurrentQuery(),
+                            decoration: const InputDecoration(
+                              labelText: 'Search products',
+                              hintText: 'Try shoes, phone, textbook...',
+                              prefixIcon: Icon(Icons.search),
+                            ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 10),
                       categoriesAsync.when(
                         data: (categories) => IconButton.filledTonal(
                           onPressed: () => _openFilters(categories),
@@ -138,68 +142,65 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           icon: const Icon(Icons.tune),
                         ),
                       ),
+                      const SizedBox(width: 10),
+                      FilledButton(
+                        onPressed: _applyCurrentQuery,
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size(92, 56),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                        ),
+                        child: const Text('Search'),
+                      ),
                     ],
                   ),
                 ],
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      if (_filters.query.trim().isNotEmpty)
-                        Chip(label: Text('Query: ${_filters.query.trim()}')),
-                      if (_filters.categoryId != null)
-                        Chip(
-                          label: Text(
-                            categoriesById[_filters.categoryId] ??
-                                'Category #${_filters.categoryId}',
-                          ),
+          if (_filters.hasActiveFilters)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    if (_filters.query.trim().isNotEmpty)
+                      Chip(label: Text('Query: ${_filters.query.trim()}')),
+                    if (_filters.categoryId != null)
+                      Chip(
+                        label: Text(
+                          categoriesById[_filters.categoryId] ??
+                              'Category #${_filters.categoryId}',
                         ),
-                      if (_filters.minPrice != null)
-                        Chip(
-                          label: Text(
-                            'Min \$${_filters.minPrice!.toStringAsFixed(2)}',
-                          ),
-                        ),
-                      if (_filters.maxPrice != null)
-                        Chip(
-                          label: Text(
-                            'Max \$${_filters.maxPrice!.toStringAsFixed(2)}',
-                          ),
-                        ),
-                      if (_filters.sortOption != ProductSortOption.newest)
-                        Chip(label: Text(_filters.sortOption.label)),
-                      if (_filters.hasActiveFilters)
-                        ActionChip(
-                          label: const Text('Clear'),
-                          onPressed: () {
-                            setState(() {
-                              _filters = const ProductSearchFilters();
-                              _queryController.clear();
-                              _hasSubmittedSearch = false;
-                            });
-                          },
-                        ),
-                    ],
-                  ),
+                      ),
+                    if (_filters.minPrice != null)
+                      Chip(
+                        label: Text('Min ${formatNaira(_filters.minPrice!)}'),
+                      ),
+                    if (_filters.maxPrice != null)
+                      Chip(
+                        label: Text('Max ${formatNaira(_filters.maxPrice!)}'),
+                      ),
+                    if (_filters.sortOption != ProductSortOption.newest)
+                      Chip(label: Text(_filters.sortOption.label)),
+                    ActionChip(
+                      label: const Text('Clear'),
+                      onPressed: () {
+                        setState(() {
+                          _filters = const ProductSearchFilters();
+                          _queryController.clear();
+                          _hasSubmittedSearch = false;
+                        });
+                      },
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                FilledButton(
-                  onPressed: _applyCurrentQuery,
-                  child: const Text('Search'),
-                ),
-              ],
+              ),
             ),
-          ),
-          const SizedBox(height: 10),
           Expanded(
             child: !_hasSubmittedSearch
                 ? recentSearchesAsync.when(
@@ -453,7 +454,9 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    decoration: const InputDecoration(labelText: 'Min Price'),
+                    decoration: const InputDecoration(
+                      labelText: 'Min Price (₦)',
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -463,7 +466,9 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    decoration: const InputDecoration(labelText: 'Max Price'),
+                    decoration: const InputDecoration(
+                      labelText: 'Max Price (₦)',
+                    ),
                   ),
                 ),
               ],

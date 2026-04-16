@@ -25,6 +25,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   bool _isSaving = false;
   bool _isSigningOut = false;
 
+  String _initialsFor(UserProfile profile) {
+    final source =
+        (profile.fullName?.trim().isNotEmpty == true
+                ? profile.fullName!.trim()
+                : profile.email.trim())
+            .split(RegExp(r'\s+|@'))
+            .where((part) => part.isNotEmpty)
+            .take(2)
+            .map((part) => part[0].toUpperCase())
+            .join();
+
+    return source.isEmpty ? 'A' : source;
+  }
+
   @override
   void dispose() {
     _fullNameController.dispose();
@@ -150,99 +164,170 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(22),
                     decoration: BoxDecoration(
                       color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          height: 64,
+                          width: 64,
+                          decoration: const BoxDecoration(
+                            color: AppColors.surfaceMuted,
+                            shape: BoxShape.circle,
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            _initialsFor(profile),
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(
+                                  color: AppColors.primaryDark,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                profile.displayName,
+                                style: Theme.of(context).textTheme.titleLarge,
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                profile.email,
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                'A complete profile makes your listings feel safer and more credible to buyers on campus.',
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Container(
+                    padding: const EdgeInsets.all(22),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(24),
                       border: Border.all(color: AppColors.border),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          profile.displayName,
-                          style: Theme.of(context).textTheme.titleLarge,
+                          'Marketplace Identity',
+                          style: Theme.of(context).textTheme.titleMedium,
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
                         Text(
-                          profile.email,
+                          'Use your real details so buyers know who they are dealing with.',
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Keep your marketplace identity up to date so buyers can trust your listings.',
-                          style: Theme.of(context).textTheme.bodyMedium,
+                        const SizedBox(height: 18),
+                        TextFormField(
+                          controller: _fullNameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Full Name',
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Full name is required';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _matricNumberController,
+                          decoration: const InputDecoration(
+                            labelText: 'Matric Number',
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _facultyController,
+                          decoration: const InputDecoration(
+                            labelText: 'Faculty',
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _phoneController,
+                          decoration: const InputDecoration(
+                            labelText: 'Phone Number',
+                          ),
+                          keyboardType: TextInputType.phone,
+                        ),
+                        const SizedBox(height: 20),
+                        ElevatedButton(
+                          onPressed: _isSaving ? null : _saveProfile,
+                          child: _isSaving
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text('SAVE PROFILE'),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  TextFormField(
-                    controller: _fullNameController,
-                    decoration: const InputDecoration(labelText: 'Full Name'),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Full name is required';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _matricNumberController,
-                    decoration: const InputDecoration(
-                      labelText: 'Matric Number',
+                  const SizedBox(height: 18),
+                  Container(
+                    padding: const EdgeInsets.all(22),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: AppColors.border),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _facultyController,
-                    decoration: const InputDecoration(labelText: 'Faculty'),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _phoneController,
-                    decoration: const InputDecoration(
-                      labelText: 'Phone Number',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'Quick access',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 14),
+                        OutlinedButton.icon(
+                          onPressed: () => context.push('/my-listings'),
+                          icon: const Icon(Icons.storefront_outlined),
+                          label: const Text('MY LISTINGS'),
+                        ),
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          onPressed: () => context.push('/orders'),
+                          icon: const Icon(Icons.receipt_long_outlined),
+                          label: const Text('ORDERS'),
+                        ),
+                        const SizedBox(height: 12),
+                        TextButton(
+                          onPressed: _isSigningOut ? null : _signOut,
+                          child: _isSigningOut
+                              ? const SizedBox(
+                                  height: 18,
+                                  width: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text('SIGN OUT'),
+                        ),
+                      ],
                     ),
-                    keyboardType: TextInputType.phone,
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: _isSaving ? null : _saveProfile,
-                    child: _isSaving
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Text('SAVE PROFILE'),
-                  ),
-                  const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    onPressed: () => context.push('/my-listings'),
-                    icon: const Icon(Icons.storefront_outlined),
-                    label: const Text('MY LISTINGS'),
-                  ),
-                  const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    onPressed: () => context.push('/orders'),
-                    icon: const Icon(Icons.receipt_long_outlined),
-                    label: const Text('ORDERS'),
-                  ),
-                  const SizedBox(height: 12),
-                  TextButton(
-                    onPressed: _isSigningOut ? null : _signOut,
-                    child: _isSigningOut
-                        ? const SizedBox(
-                            height: 18,
-                            width: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('SIGN OUT'),
                   ),
                 ],
               ),

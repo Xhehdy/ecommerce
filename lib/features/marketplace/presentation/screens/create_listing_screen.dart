@@ -302,7 +302,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                 controller: _priceController,
                 decoration: const InputDecoration(
                   labelText: 'Price',
-                  prefixText: '\$',
+                  prefixText: '₦ ',
                 ),
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,

@@ -98,6 +98,20 @@ class AuthRepository {
     return UserProfile.fromJson(response);
   }
 
+  Future<UserProfile?> getProfileById(String userId) async {
+    final response = await _supabase
+        .from('profiles')
+        .select()
+        .eq('id', userId)
+        .maybeSingle();
+
+    if (response == null) {
+      return null;
+    }
+
+    return UserProfile.fromJson(response);
+  }
+
   Future<UserProfile> updateCurrentUserProfile({
     required String fullName,
     String? matricNumber,

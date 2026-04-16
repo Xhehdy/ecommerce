@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../app/theme/colors.dart';
+import '../../../../core/utils/currency_formatter.dart';
 import '../../data/models/product_model.dart';
 
 class ProductCard extends StatelessWidget {
@@ -11,7 +13,15 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isSold = product.status == 'sold';
-    final metaText = product.condition ?? product.location ?? 'Campus pickup';
+    final conditionText = product.condition?.trim();
+    final locationText = product.location?.trim();
+    final metaText = [
+      if (conditionText != null && conditionText.isNotEmpty) conditionText,
+      if (locationText != null && locationText.isNotEmpty)
+        'Pickup at $locationText'
+      else
+        'Campus pickup',
+    ].join(' • ');
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -21,7 +31,7 @@ class ProductCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             AspectRatio(
-              aspectRatio: 1.05,
+              aspectRatio: 1.08,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -32,10 +42,23 @@ class ProductCard extends StatelessWidget {
                             product.images.first.imageUrl,
                             fit: BoxFit.cover,
                           )
-                        : const Icon(
-                            Icons.image_not_supported_outlined,
-                            color: AppColors.textSecondary,
-                            size: 42,
+                        : const Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.photo_camera_back_outlined,
+                                color: AppColors.textSecondary,
+                                size: 36,
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                'Photo coming soon',
+                                style: TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           ),
                   ),
                   Positioned(
@@ -81,31 +104,63 @@ class ProductCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '\$${product.price.toStringAsFixed(2)}',
+                      formatNaira(product.price),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: AppColors.primary,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 7,
+                    const SizedBox(height: 8),
+                    Text(
+                      metaText,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textPrimary,
+                        height: 1.35,
+                        fontWeight: FontWeight.w600,
                       ),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceMuted,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        metaText,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w600,
+                    ),
+                    const Spacer(),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceMuted,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              isSold ? 'Unavailable now' : 'Ready for meetup',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: AppColors.textPrimary,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 8),
+                        Container(
+                          height: 36,
+                          width: 36,
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceMuted,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: const Icon(
+                            Icons.arrow_outward_rounded,
+                            size: 18,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
