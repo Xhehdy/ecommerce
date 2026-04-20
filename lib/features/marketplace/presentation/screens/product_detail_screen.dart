@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/colors.dart';
+import '../../../../core/services/paystack_service.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../auth/application/auth_provider.dart';
 import '../../../auth/data/models/user_profile_model.dart';
 import '../../application/marketplace_providers.dart';
+import '../../data/models/product_model.dart';
 import '../../data/repositories/marketplace_repository.dart';
 
 class ProductDetailScreen extends ConsumerWidget {
@@ -136,15 +138,27 @@ class ProductDetailScreen extends ConsumerWidget {
   Future<void> _placeOrder(
     BuildContext context,
     WidgetRef ref,
-    String productId,
+    Product product,
+    UserProfile? buyerProfile,
+    String? buyerEmail,
   ) async {
+    if (buyerEmail == null || buyerEmail.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to start payment: missing account email.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Place Order'),
-          content: const Text(
-            'This will create a transaction record, move the product into your purchase history, and mark the listing as sold.',
+          title: const Text('Pay with Paystack (Sandbox)'),
+          content: Text(
+            'You are about to pay ${formatNaira(product.price)} in Paystack sandbox mode before creating this order.',
           ),
           actions: [
             TextButton(
@@ -165,11 +179,37 @@ class ProductDetailScreen extends ConsumerWidget {
     }
 
     try {
+      final paymentResult = await ref
+          .read(paystackServiceProvider)
+          .chargeSandboxPayment(
+            context: context,
+            amount: product.price,
+            email: buyerEmail,
+            fullName: buyerProfile?.fullName,
+            metadata: {
+              'product_id': product.id,
+              'product_title': product.title,
+            },
+          );
+
+      if (!paymentResult.isSuccessful) {
+        if (!context.mounted) {
+          return;
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Payment was cancelled. No order was created.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        return;
+      }
+
       await ref
           .read(marketplaceRepositoryProvider)
-          .createOrderForProduct(productId);
+          .createOrderForProduct(product.id);
 
-      ref.invalidate(productDetailsProvider(productId));
+      ref.invalidate(productDetailsProvider(product.id));
       ref.invalidate(homeFeedProvider);
       ref.invalidate(myListingsProvider);
       ref.invalidate(purchaseOrdersProvider);
@@ -180,8 +220,10 @@ class ProductDetailScreen extends ConsumerWidget {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Order created successfully.'),
+        SnackBar(
+          content: Text(
+            'Payment successful${paymentResult.reference == null ? '' : ' (${paymentResult.reference})'}. Order created.',
+          ),
           backgroundColor: AppColors.primary,
         ),
       );
@@ -275,6 +317,7 @@ class ProductDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final productAsync = ref.watch(productDetailsProvider(productId));
     final currentUser = ref.watch(currentUserProvider);
+    final buyerProfile = ref.watch(profileProvider).asData?.value;
     final favoriteIdsAsync = ref.watch(favoriteProductIdsProvider);
     final product = productAsync.asData?.value;
     final sellerProfileAsync = product == null
@@ -596,7 +639,13 @@ class ProductDetailScreen extends ConsumerWidget {
                       ElevatedButton(
                         onPressed: product.status == 'sold'
                             ? null
-                            : () => _placeOrder(context, ref, product.id),
+                            : () => _placeOrder(
+                                context,
+                                ref,
+                                product,
+                                buyerProfile,
+                                currentUser?.email,
+                              ),
                         child: const Text('PLACE ORDER'),
                       ),
                   ],
