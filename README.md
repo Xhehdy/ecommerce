@@ -38,6 +38,11 @@ supabase/
 
 `marketplace_app_build_structure.md` contains the original phase plan and feature breakdown used to shape the project.
 
+## Plan status
+
+The original plan in `marketplace_app_build_structure.md` is not 100% complete yet.  
+Core marketplace functionality is implemented, while payment integration and admin/moderation tooling remain pending.
+
 ## Setup
 
 1. Install Flutter and confirm `flutter doctor` is healthy.
