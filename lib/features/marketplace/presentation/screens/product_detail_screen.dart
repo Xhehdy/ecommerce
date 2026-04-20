@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../app/theme/colors.dart';
 import '../../../../core/services/paystack_service.dart';
@@ -50,6 +51,14 @@ class ProductDetailScreen extends ConsumerWidget {
     }
 
     return 'Meetup details can be confirmed after you place an order.';
+  }
+
+  String _formatPaymentReference(PaystackPaymentResult paymentResult) {
+    if (paymentResult.reference == null) {
+      return '';
+    }
+
+    return ' (${paymentResult.reference})';
   }
 
   Future<void> _toggleProductStatus(
@@ -139,9 +148,10 @@ class ProductDetailScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     Product product,
+    User? buyerUser,
     UserProfile? buyerProfile,
-    String? buyerEmail,
   ) async {
+    final buyerEmail = buyerUser?.email;
     if (buyerEmail == null || buyerEmail.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -196,9 +206,12 @@ class ProductDetailScreen extends ConsumerWidget {
         if (!context.mounted) {
           return;
         }
+        final message = paymentResult.isTimedOut
+            ? 'Payment timed out. Please try again.'
+            : 'Payment was cancelled. No order was created.';
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Payment was cancelled. No order was created.'),
+          SnackBar(
+            content: Text(message),
             backgroundColor: AppColors.error,
           ),
         );
@@ -219,11 +232,10 @@ class ProductDetailScreen extends ConsumerWidget {
         return;
       }
 
+      final referenceText = _formatPaymentReference(paymentResult);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Payment successful${paymentResult.reference == null ? '' : ' (${paymentResult.reference})'}. Order created.',
-          ),
+          content: Text('Payment successful$referenceText. Order created.'),
           backgroundColor: AppColors.primary,
         ),
       );
@@ -643,8 +655,8 @@ class ProductDetailScreen extends ConsumerWidget {
                                 context,
                                 ref,
                                 product,
+                                currentUser,
                                 buyerProfile,
-                                currentUser?.email,
                               ),
                         child: const Text('PLACE ORDER'),
                       ),

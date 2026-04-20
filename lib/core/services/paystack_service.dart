@@ -10,17 +10,25 @@ final paystackServiceProvider = Provider<PaystackService>((ref) {
   return PaystackService();
 });
 
+enum PaystackPaymentStatus { successful, cancelled, timedOut }
+
 class PaystackPaymentResult {
-  final bool isSuccessful;
+  final PaystackPaymentStatus status;
   final String? reference;
 
   const PaystackPaymentResult({
-    required this.isSuccessful,
+    required this.status,
     this.reference,
   });
+
+  bool get isSuccessful => status == PaystackPaymentStatus.successful;
+
+  bool get isTimedOut => status == PaystackPaymentStatus.timedOut;
 }
 
 class PaystackService {
+  static const _paymentFlowTimeout = Duration(minutes: 5);
+
   Future<PaystackPaymentResult> chargeSandboxPayment({
     required BuildContext context,
     required double amount,
@@ -74,7 +82,7 @@ class PaystackService {
         if (!completer.isCompleted) {
           completer.complete(
             PaystackPaymentResult(
-              isSuccessful: true,
+              status: PaystackPaymentStatus.successful,
               reference: paystackCallback.reference,
             ),
           );
@@ -84,7 +92,7 @@ class PaystackService {
         if (!completer.isCompleted) {
           completer.complete(
             PaystackPaymentResult(
-              isSuccessful: false,
+              status: PaystackPaymentStatus.cancelled,
               reference: paystackCallback.reference,
             ),
           );
@@ -93,8 +101,9 @@ class PaystackService {
     );
 
     return completer.future.timeout(
-      const Duration(minutes: 10),
-      onTimeout: () => const PaystackPaymentResult(isSuccessful: false),
+      _paymentFlowTimeout,
+      onTimeout: () =>
+          const PaystackPaymentResult(status: PaystackPaymentStatus.timedOut),
     );
   }
 

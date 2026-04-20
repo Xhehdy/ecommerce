@@ -12,6 +12,8 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  static const _minimumBrandingDisplayDuration = Duration(milliseconds: 1200);
+
   @override
   void initState() {
     super.initState();
@@ -19,7 +21,7 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _routeAfterSplash() async {
-    await Future<void>.delayed(const Duration(milliseconds: 1200));
+    await Future<void>.delayed(_minimumBrandingDisplayDuration);
     if (!mounted) {
       return;
     }

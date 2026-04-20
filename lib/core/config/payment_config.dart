@@ -5,5 +5,5 @@ const paystackSandboxSecretKey = String.fromEnvironment(
 
 const paystackCallbackUrl = String.fromEnvironment(
   'PAYSTACK_CALLBACK_URL',
-  defaultValue: 'https://example.com/paystack-callback',
+  defaultValue: 'https://atelier.local/paystack-callback',
 );
