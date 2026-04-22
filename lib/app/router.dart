@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/profile_screen.dart';
+import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/auth/presentation/screens/signup_screen.dart';
 import '../../features/marketplace/presentation/screens/home_screen.dart';
 import '../../features/marketplace/presentation/screens/product_detail_screen.dart';
@@ -15,15 +16,16 @@ import '../../features/marketplace/presentation/screens/search_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
-    initialLocation: '/home',
+    initialLocation: '/splash',
     redirect: (context, state) {
       final supabase = Supabase.instance.client;
       final session = supabase.auth.currentSession;
       final isAuthRoute =
           state.matchedLocation == '/login' ||
           state.matchedLocation == '/signup';
+      final isSplashRoute = state.matchedLocation == '/splash';
 
-      if (session == null && !isAuthRoute) {
+      if (session == null && !isAuthRoute && !isSplashRoute) {
         return '/login';
       }
 
@@ -34,6 +36,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(
         path: '/signup',
