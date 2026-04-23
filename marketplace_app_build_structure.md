@@ -14,6 +14,32 @@ This setup is best for the project because the app needs strong marketplace sear
 
 ---
 
+## Implementation Status Check (Apr 2026)
+
+Based on the current codebase, this plan is **partially implemented**.
+
+### Implemented from this plan
+
+- auth flow (sign up, sign in, sign out)
+- profile creation/editing
+- home feed and category browsing
+- product details
+- create/edit listings, image upload, mark sold
+- search + filters + sorting + recent searches
+- favorites
+- my listings
+- order record creation with purchase/sales history
+- report listing
+
+### Not yet implemented from this plan
+
+- payment provider integration (Paystack/Flutterwave)
+- dedicated admin dashboard and moderation tooling
+- route `/splash`
+- full seller profile feature as a separate screen/route
+
+---
+
 ## Core Build Philosophy
 
 Build the app in **layers** and by **feature**, not by random screens.
@@ -423,4 +449,3 @@ That will keep the project organized and prevent major rewrites later.
 - set up Supabase project
 - build auth and profile flow
 - create the base folder structure
-
