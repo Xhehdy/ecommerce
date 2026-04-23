@@ -469,6 +469,18 @@ class MarketplaceRepository {
     });
   }
 
+  Future<void> clearRecentSearches() async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) {
+      return;
+    }
+
+    await _supabase
+        .from('recent_searches')
+        .delete()
+        .eq('user_id', user.id);
+  }
+
   Future<void> _uploadProductImages(String productId, List<File> images) async {
     for (int i = 0; i < images.length; i++) {
       final file = images[i];

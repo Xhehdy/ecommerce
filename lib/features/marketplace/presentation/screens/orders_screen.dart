@@ -19,20 +19,20 @@ class OrdersScreen extends ConsumerWidget {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text(AppStrings.orders),
-          bottom: TabBar(
-            tabs: const [
+          title: const Text(AppStrings.orders, style: TextStyle(fontWeight: FontWeight.w800)),
+          bottom: const TabBar(
+            tabs: [
               Tab(text: AppStrings.purchases),
               Tab(text: AppStrings.sales),
             ],
             indicatorColor: AppColors.primary,
-            indicatorWeight: 2.5,
-            labelColor: AppColors.primary,
+            indicatorWeight: 2,
+            indicatorSize: TabBarIndicatorSize.label,
+            labelColor: AppColors.primaryDark,
             unselectedLabelColor: AppColors.textSecondary,
-            labelStyle: const TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: 14,
-            ),
+            labelStyle: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+            unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            dividerColor: AppColors.border,
           ),
         ),
         bottomNavigationBar: const MarketplaceBottomNavBar(
@@ -42,12 +42,7 @@ class OrdersScreen extends ConsumerWidget {
           children: [
             _OrdersList(
               ordersAsync: ref.watch(purchaseOrdersProvider),
-              emptyTitle: AppStrings.noPurchases,
-              emptyMessage:
-                  'Place an order from a product page and it will show up here.',
-              counterpartyLabel: 'Seller',
-              actionLabel: 'Browse Listings',
-              actionRoute: '/home',
+              isPurchases: true,
               onRefresh: (ref) async {
                 ref.invalidate(purchaseOrdersProvider);
                 await ref.read(purchaseOrdersProvider.future);
@@ -55,12 +50,7 @@ class OrdersScreen extends ConsumerWidget {
             ),
             _OrdersList(
               ordersAsync: ref.watch(salesOrdersProvider),
-              emptyTitle: AppStrings.noSales,
-              emptyMessage:
-                  'When someone orders one of your listings, it will appear here.',
-              counterpartyLabel: 'Buyer',
-              actionLabel: 'Open My Listings',
-              actionRoute: '/my-listings',
+              isPurchases: false,
               onRefresh: (ref) async {
                 ref.invalidate(salesOrdersProvider);
                 await ref.read(salesOrdersProvider.future);
@@ -75,20 +65,12 @@ class OrdersScreen extends ConsumerWidget {
 
 class _OrdersList extends ConsumerWidget {
   final AsyncValue<List<MarketplaceOrder>> ordersAsync;
-  final String emptyTitle;
-  final String emptyMessage;
-  final String counterpartyLabel;
-  final String actionLabel;
-  final String actionRoute;
+  final bool isPurchases;
   final Future<void> Function(WidgetRef ref) onRefresh;
 
   const _OrdersList({
     required this.ordersAsync,
-    required this.emptyTitle,
-    required this.emptyMessage,
-    required this.counterpartyLabel,
-    required this.actionLabel,
-    required this.actionRoute,
+    required this.isPurchases,
     required this.onRefresh,
   });
 
@@ -102,9 +84,9 @@ class _OrdersList extends ConsumerWidget {
             return ListView(
               padding: const EdgeInsets.all(24),
               children: [
-                const SizedBox(height: 40),
+                const SizedBox(height: 16),
                 Container(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
                   decoration: BoxDecoration(
                     color: AppColors.surface,
                     borderRadius: BorderRadius.circular(24),
@@ -119,35 +101,55 @@ class _OrdersList extends ConsumerWidget {
                           color: AppColors.surfaceMuted,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
-                          Icons.receipt_long_outlined,
-                          size: 36,
-                          color: AppColors.textSecondary,
+                        child: Icon(
+                          isPurchases ? Icons.shopping_bag_outlined : Icons.storefront_outlined,
+                          size: 32,
+                          color: AppColors.primaryDark,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 24),
                       Text(
-                        emptyTitle,
+                        isPurchases ? 'No purchases yet' : 'No sales yet',
                         style: Theme.of(context)
                             .textTheme
-                            .titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w700),
+                            .titleLarge
+                            ?.copyWith(fontWeight: FontWeight.w800, color: AppColors.textPrimary),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        emptyMessage,
-                        style: Theme.of(context).textTheme.bodyMedium,
+                        isPurchases 
+                          ? 'When you place an order, it will appear here.'
+                          : 'When someone buys from you, it will appear here.',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
                         textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 28),
                       ElevatedButton(
-                        onPressed: () => context.go(actionRoute),
-                        child: Text(actionLabel.toUpperCase()),
+                        onPressed: () => context.go(isPurchases ? '/home' : '/my-listings'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryDark,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                        ),
+                        child: Text(isPurchases ? 'Browse listings' : 'Manage my listings'),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 16),
+                if (isPurchases)
+                  _InfoTile(
+                    title: 'Need help with an order?',
+                    subtitle: 'Visit our Help Center for guides and support.',
+                    icon: Icons.chevron_right_rounded,
+                    isActionIcon: true,
+                  )
+                else
+                  _InfoTile(
+                    title: 'Tips to sell faster',
+                    subtitle: 'Add clear photos, write good descriptions and set fair prices.',
+                    icon: Icons.trending_up_rounded,
+                  ),
               ],
             );
           }
@@ -169,6 +171,7 @@ class _OrdersList extends ConsumerWidget {
               final statusLabel = order.isPending
                   ? 'AWAITING PAYMENT'
                   : order.status.replaceAll('_', ' ').toUpperCase();
+              final counterpartyLabel = isPurchases ? 'Seller' : 'Buyer';
 
               return Container(
                 decoration: BoxDecoration(
@@ -215,17 +218,17 @@ class _OrdersList extends ConsumerWidget {
                                 children: [
                                   Text(
                                     product?.title ?? 'Order ${order.id}',
-                                    style: Theme.of(context).textTheme.titleMedium,
+                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
                                   ),
-                                  const SizedBox(height: 6),
+                                  const SizedBox(height: 4),
                                   Text(
                                     formatNaira(order.totalAmount),
                                     style: Theme.of(context)
                                         .textTheme
                                         .titleMedium
                                         ?.copyWith(
-                                          color: AppColors.primary,
-                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.primaryDark,
+                                          fontWeight: FontWeight.w800,
                                         ),
                                   ),
                                   const SizedBox(height: 6),
@@ -233,7 +236,7 @@ class _OrdersList extends ConsumerWidget {
                                     '$counterpartyLabel: ${order.counterparty?.displayName ?? 'Unknown'}',
                                     style: Theme.of(context).textTheme.bodySmall,
                                   ),
-                                  const SizedBox(height: 4),
+                                  const SizedBox(height: 2),
                                   Text(
                                     createdAtLabel,
                                     style: Theme.of(context).textTheme.bodySmall,
@@ -281,6 +284,64 @@ class _OrdersList extends ConsumerWidget {
             child: Text(ErrorMapper.toAppException(error).message),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _InfoTile extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final bool isActionIcon;
+
+  const _InfoTile({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    this.isActionIcon = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          if (isActionIcon)
+            Icon(icon, color: AppColors.textSecondary)
+          else
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceMuted,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: AppColors.primary, size: 20),
+            ),
+        ],
       ),
     );
   }

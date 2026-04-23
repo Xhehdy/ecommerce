@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/colors.dart';
 import '../../../../core/errors/error_mapper.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../application/marketplace_providers.dart';
 import '../../data/models/category_model.dart';
+import '../../data/models/product_model.dart';
 import '../../data/models/search_models.dart';
 import '../../data/repositories/marketplace_repository.dart';
 import '../widgets/marketplace_navigation.dart';
@@ -41,7 +43,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   Future<void> _applyCurrentQuery() async {
-    final filters = _filters.copyWith(query: _queryController.text.trim());
+    final query = _queryController.text.trim();
+    if (query.isEmpty) {
+      setState(() {
+        _hasSubmittedSearch = false;
+        _filters = const ProductSearchFilters();
+      });
+      return;
+    }
+    final filters = _filters.copyWith(query: query);
     await _runSearch(filters);
   }
 
@@ -69,127 +79,91 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     await _runSearch(filters);
   }
 
+  IconData _iconForCategory(String? name) {
+    if (name == null) return Icons.category_outlined;
+    final lower = name.toLowerCase();
+    if (lower.contains('book')) return Icons.menu_book_outlined;
+    if (lower.contains('electronic')) return Icons.computer_outlined;
+    if (lower.contains('fashion')) return Icons.checkroom_outlined;
+    if (lower.contains('beauty')) return Icons.face_retouching_natural;
+    if (lower.contains('home') || lower.contains('hostel')) return Icons.chair_outlined;
+    if (lower.contains('sport')) return Icons.sports_basketball_outlined;
+    return Icons.category_outlined;
+  }
+
   @override
   Widget build(BuildContext context) {
     final categoriesAsync = ref.watch(categoriesProvider);
     final recentSearchesAsync = ref.watch(recentSearchesProvider);
+    final suggestedAsync = ref.watch(homeFeedProvider); // Using home feed for suggested
     final categories = categoriesAsync.asData?.value ?? const <Category>[];
-    final categoriesById = {
-      for (final category in categories) category.id: category.displayName,
-    };
+
     final searchResultsAsync = _hasSubmittedSearch
         ? ref.watch(searchResultsProvider(_filters))
         : null;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Search')),
+      appBar: AppBar(
+        title: const Text('Search', style: TextStyle(fontWeight: FontWeight.w800)),
+        centerTitle: false,
+      ),
       bottomNavigationBar: const MarketplaceBottomNavBar(
         currentTab: MarketplaceTab.search,
       ),
       body: Column(
         children: [
+          // ── Search Input ──
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Find what you need fast',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Search by keyword, then tighten the results with price and category filters.',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: SizedBox(
-                          height: 56,
-                          child: TextField(
-                            controller: _queryController,
-                            textInputAction: TextInputAction.search,
-                            onSubmitted: (_) => _applyCurrentQuery(),
-                            decoration: const InputDecoration(
-                              labelText: 'Search products',
-                              hintText: 'Try shoes, phone, textbook...',
-                              prefixIcon: Icon(Icons.search),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      categoriesAsync.when(
-                        data: (categories) => IconButton.filledTonal(
-                          onPressed: () => _openFilters(categories),
-                          icon: const Icon(Icons.tune),
-                        ),
-                        loading: () => const SizedBox(
-                          height: 40,
-                          width: 40,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                        error: (_, _) => IconButton.filledTonal(
-                          onPressed: null,
-                          icon: const Icon(Icons.tune),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      FilledButton(
-                        onPressed: _applyCurrentQuery,
-                        style: FilledButton.styleFrom(
-                          minimumSize: const Size(92, 56),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                        ),
-                        child: const Text('Search'),
-                      ),
-                    ],
-                  ),
-                ],
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: TextField(
+              controller: _queryController,
+              textInputAction: TextInputAction.search,
+              onSubmitted: (_) => _applyCurrentQuery(),
+              decoration: InputDecoration(
+                hintText: 'Search for anything...',
+                prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.tune, color: AppColors.textSecondary),
+                  onPressed: () => _openFilters(categories),
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 14),
               ),
             ),
           ),
-          if (_filters.hasActiveFilters)
+
+          // ── Active Filters Chips ──
+          if (_hasSubmittedSearch && _filters.hasActiveFilters)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: SizedBox(
+                height: 40,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
                   children: [
-                    if (_filters.query.trim().isNotEmpty)
-                      Chip(label: Text('Query: ${_filters.query.trim()}')),
                     if (_filters.categoryId != null)
-                      Chip(
-                        label: Text(
-                          categoriesById[_filters.categoryId] ??
-                              'Category #${_filters.categoryId}',
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: Chip(
+                          label: Text(
+                            categories.firstWhere((c) => c.id == _filters.categoryId, orElse: () => const Category(id: 0, slug: '', name: 'Category')).displayName,
+                          ),
+                          onDeleted: () {
+                            _runSearch(_filters.copyWith(categoryId: null));
+                          },
                         ),
                       ),
-                    if (_filters.minPrice != null)
-                      Chip(
-                        label: Text('Min ${formatNaira(_filters.minPrice!)}'),
+                    if (_filters.minPrice != null || _filters.maxPrice != null)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: Chip(
+                          label: Text('Price filtered'),
+                          onDeleted: () {
+                            _runSearch(_filters.copyWith(minPrice: null, maxPrice: null));
+                          },
+                        ),
                       ),
-                    if (_filters.maxPrice != null)
-                      Chip(
-                        label: Text('Max ${formatNaira(_filters.maxPrice!)}'),
-                      ),
-                    if (_filters.sortOption != ProductSortOption.newest)
-                      Chip(label: Text(_filters.sortOption.label)),
                     ActionChip(
-                      label: const Text('Clear'),
+                      label: const Text('Clear all'),
                       onPressed: () {
                         setState(() {
                           _filters = const ProductSearchFilters();
@@ -202,148 +176,170 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ),
               ),
             ),
+
+          // ── Main Content Area ──
           Expanded(
             child: !_hasSubmittedSearch
-                ? recentSearchesAsync.when(
-                    data: (recentSearches) => ListView(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                      children: [
-                        if (recentSearches.isNotEmpty) ...[
-                          Text(
-                            'Recent Searches',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          const SizedBox(height: 12),
-                          ...recentSearches.map(
-                            (recentSearch) => Container(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              decoration: BoxDecoration(
-                                color: AppColors.surface,
-                                borderRadius: BorderRadius.circular(18),
-                                border: Border.all(color: AppColors.border),
-                              ),
-                              child: ListTile(
-                                title: Text(
-                                  recentSearch.query.isEmpty
-                                      ? 'Filtered search'
-                                      : recentSearch.query,
-                                ),
-                                subtitle: Text(
-                                  recentSearch.categoryId == null
-                                      ? recentSearch.sortOption.label
-                                      : '${categoriesById[recentSearch.categoryId] ?? 'Category'} • ${recentSearch.sortOption.label}',
-                                ),
-                                trailing: const Icon(Icons.history),
-                                onTap: () => _applyRecentSearch(recentSearch),
-                              ),
-                            ),
-                          ),
-                        ] else
-                          Container(
-                            padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              color: AppColors.surface,
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(color: AppColors.border),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'No recent searches yet',
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.titleMedium,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Start with a keyword or open filters to narrow the marketplace.',
-                                  style: Theme.of(context).textTheme.bodyMedium,
-                                ),
-                              ],
-                            ),
-                          ),
-                      ],
-                    ),
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
-                    error: (error, _) => Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Text(
-                          ErrorMapper.toAppException(error).message,
-                        ),
-                      ),
-                    ),
-                  )
-                : searchResultsAsync!.when(
-                    data: (products) {
-                      if (products.isEmpty) {
-                        return ListView(
-                          padding: const EdgeInsets.all(16),
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(24),
-                              decoration: BoxDecoration(
-                                color: AppColors.surface,
-                                borderRadius: BorderRadius.circular(24),
-                                border: Border.all(color: AppColors.border),
-                              ),
+                ? CustomScrollView(
+                    slivers: [
+                      // ── Recent Searches ──
+                      recentSearchesAsync.when(
+                        data: (recentSearches) {
+                          if (recentSearches.isEmpty) return const SliverToBoxAdapter();
+                          return SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                               child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Icon(
-                                    Icons.search_off_outlined,
-                                    size: 48,
-                                    color: AppColors.textSecondary,
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text('Recent searches', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                                      TextButton(
+                                        onPressed: () async {
+                                          await ref.read(marketplaceRepositoryProvider).clearRecentSearches();
+                                          ref.invalidate(recentSearchesProvider);
+                                        },
+                                        style: TextButton.styleFrom(
+                                          foregroundColor: AppColors.primary,
+                                          padding: EdgeInsets.zero,
+                                          minimumSize: Size.zero,
+                                        ),
+                                        child: const Text('Clear all'),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'No results matched your search.',
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.titleMedium,
-                                    textAlign: TextAlign.center,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Try a different keyword or widen your price range.',
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodyMedium,
-                                    textAlign: TextAlign.center,
+                                  const SizedBox(height: 12),
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: recentSearches.map((rs) {
+                                      return ActionChip(
+                                        label: Text(rs.query.isEmpty ? 'Filtered' : rs.query),
+                                        onPressed: () => _applyRecentSearch(rs),
+                                        backgroundColor: AppColors.surface,
+                                        side: const BorderSide(color: AppColors.border),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                                      );
+                                    }).toList(),
                                   ),
                                 ],
                               ),
                             ),
-                          ],
+                          );
+                        },
+                        loading: () => const SliverToBoxAdapter(),
+                        error: (_, __) => const SliverToBoxAdapter(),
+                      ),
+
+                      // ── Popular Categories ──
+                      if (categories.isNotEmpty)
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Popular categories', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                                const SizedBox(height: 16),
+                                GridView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    crossAxisSpacing: 8,
+                                    mainAxisSpacing: 8,
+                                    mainAxisExtent: 42,
+                                  ),
+                                  itemCount: categories.length,
+                                  itemBuilder: (context, index) {
+                                    final cat = categories[index];
+                                    return OutlinedButton.icon(
+                                      onPressed: () {
+                                        _runSearch(ProductSearchFilters(categoryId: cat.id));
+                                      },
+                                      icon: Icon(_iconForCategory(cat.displayName), size: 18, color: AppColors.textSecondary),
+                                      label: Text(
+                                        cat.displayName,
+                                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      style: OutlinedButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                                        alignment: Alignment.centerLeft,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                        side: const BorderSide(color: AppColors.border),
+                                        backgroundColor: AppColors.surface,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                      // ── Suggested for you ──
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                          child: Text('Suggested for you', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                        ),
+                      ),
+                      suggestedAsync.when(
+                        data: (products) {
+                          if (products.isEmpty) return const SliverToBoxAdapter();
+                          // Show a list view of products (horizontal tile layout)
+                          return SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                final product = products[index];
+                                return _SuggestedProductTile(product: product);
+                              },
+                              childCount: products.take(5).length, // Just show top 5 suggested
+                            ),
+                          );
+                        },
+                        loading: () => const SliverFillRemaining(child: Center(child: CircularProgressIndicator())),
+                        error: (_, __) => const SliverToBoxAdapter(),
+                      ),
+                    ],
+                  )
+                : searchResultsAsync!.when(
+                    data: (products) {
+                      if (products.isEmpty) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.search_off_outlined, size: 64, color: AppColors.border),
+                              const SizedBox(height: 16),
+                              Text('No results found', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                              const SizedBox(height: 8),
+                              const Text('Try adjusting your search or filters.', style: TextStyle(color: AppColors.textSecondary)),
+                            ],
+                          ),
                         );
                       }
 
                       return GridView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                        gridDelegate:
-                            const SliverGridDelegateWithMaxCrossAxisExtent(
-                              maxCrossAxisExtent: 240,
-                              mainAxisExtent: 290,
-                              crossAxisSpacing: 16,
-                              mainAxisSpacing: 18,
-                            ),
+                        padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),
+                        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 240,
+                          mainAxisExtent: 245,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 16,
+                        ),
                         itemCount: products.length,
                         itemBuilder: (context, index) {
                           return ProductCard(product: products[index]);
                         },
                       );
                     },
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
-                    error: (error, _) => Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Text(
-                          ErrorMapper.toAppException(error).message,
-                        ),
-                      ),
-                    ),
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (error, _) => Center(child: Text(ErrorMapper.toAppException(error).message)),
                   ),
           ),
         ],
@@ -352,6 +348,74 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 }
 
+class _SuggestedProductTile extends StatelessWidget {
+  final Product product;
+
+  const _SuggestedProductTile({required this.product});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => context.push('/product/${product.id}'),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceMuted,
+                borderRadius: BorderRadius.circular(12),
+                image: product.images.isNotEmpty
+                    ? DecorationImage(
+                        image: NetworkImage(product.images.first.imageUrl),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
+              ),
+              child: product.images.isEmpty
+                  ? const Icon(Icons.image_outlined, color: AppColors.border)
+                  : null,
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.title,
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    formatNaira(product.price),
+                    style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 13),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    product.location ?? 'Main Campus',
+                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.favorite_border_rounded, color: AppColors.textSecondary),
+              onPressed: () {
+                // TODO: toggle favorite
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Reusing the same filter sheet logic but keeping the UI styling clean
 class _SearchFilterSheet extends StatefulWidget {
   final List<Category> categories;
   final ProductSearchFilters initialFilters;
@@ -491,10 +555,7 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
                   )
                   .toList(),
               onChanged: (value) {
-                if (value == null) {
-                  return;
-                }
-
+                if (value == null) return;
                 setState(() => _selectedSortOption = value);
               },
             ),

@@ -110,9 +110,9 @@ class FavoritesScreen extends ConsumerWidget {
                     gridDelegate:
                         const SliverGridDelegateWithMaxCrossAxisExtent(
                           maxCrossAxisExtent: 240,
-                          mainAxisExtent: 290,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 18,
+                          mainAxisExtent: 245,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 16,
                         ),
                     delegate: SliverChildBuilderDelegate((context, index) {
                       return ProductCard(product: products[index]);
@@ -139,9 +139,9 @@ class FavoritesScreen extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 240,
-        mainAxisExtent: 290,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 18,
+        mainAxisExtent: 245,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 16,
       ),
       itemCount: 6,
       itemBuilder: (_, __) => const ProductCardShimmer(),

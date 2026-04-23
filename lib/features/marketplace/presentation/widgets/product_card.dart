@@ -70,7 +70,7 @@ class _ProductCardState extends State<ProductCard>
         child: Container(
           decoration: BoxDecoration(
             color: AppColors.surface,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppColors.border),
           ),
           clipBehavior: Clip.antiAlias,
@@ -78,8 +78,7 @@ class _ProductCardState extends State<ProductCard>
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // ── Image ──
-              AspectRatio(
-                aspectRatio: 1.08,
+              Expanded(
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
@@ -96,14 +95,15 @@ class _ProductCardState extends State<ProductCard>
                                 Icon(
                                   Icons.photo_camera_back_outlined,
                                   color: AppColors.textSecondary,
-                                  size: 36,
+                                  size: 32,
                                 ),
-                                SizedBox(height: 8),
+                                SizedBox(height: 6),
                                 Text(
-                                  'Photo coming soon',
+                                  'No photo',
                                   style: TextStyle(
                                     color: AppColors.textSecondary,
                                     fontWeight: FontWeight.w600,
+                                    fontSize: 12,
                                   ),
                                 ),
                               ],
@@ -111,12 +111,12 @@ class _ProductCardState extends State<ProductCard>
                     ),
                     // ── Status badge ──
                     Positioned(
-                      top: 10,
-                      left: 10,
+                      top: 8,
+                      left: 8,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
+                          horizontal: 8,
+                          vertical: 4,
                         ),
                         decoration: BoxDecoration(
                           color: isSold
@@ -131,7 +131,7 @@ class _ProductCardState extends State<ProductCard>
                                 ? Colors.orange.shade900
                                 : AppColors.primaryDark,
                             fontWeight: FontWeight.w700,
-                            fontSize: 11,
+                            fontSize: 10,
                           ),
                         ),
                       ),
@@ -141,83 +141,82 @@ class _ProductCardState extends State<ProductCard>
               ),
 
               // ── Info ──
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        product.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        formatNaira(product.price),
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        metaText,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                      ),
-                      const Spacer(),
-                      // ── Bottom row ──
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.surfaceMuted,
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Text(
-                                isSold ? 'Unavailable' : 'Ready for meetup',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                      color: AppColors.textPrimary,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 11.5,
-                                    ),
-                              ),
-                            ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      product.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(fontSize: 13),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      formatNaira(product.price),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 15,
                           ),
-                          const SizedBox(width: 8),
-                          Container(
-                            height: 34,
-                            width: 34,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      metaText,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.textSecondary,
+                            fontSize: 11,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    // ── Bottom row ──
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
                               color: AppColors.surfaceMuted,
                               borderRadius: BorderRadius.circular(999),
                             ),
-                            child: const Icon(
-                              Icons.arrow_outward_rounded,
-                              size: 16,
-                              color: AppColors.textPrimary,
+                            child: Text(
+                              isSold ? 'Unavailable' : 'Ready for meetup',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: AppColors.textPrimary,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 10,
+                                  ),
                             ),
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          height: 28,
+                          width: 28,
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceMuted,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: const Icon(
+                            Icons.arrow_outward_rounded,
+                            size: 14,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ],
