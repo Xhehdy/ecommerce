@@ -1,8 +1,11 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/auth/presentation/screens/profile_screen.dart';
 import '../../features/auth/presentation/screens/signup_screen.dart';
 import '../../features/marketplace/presentation/screens/home_screen.dart';
@@ -14,14 +17,30 @@ import '../../features/marketplace/presentation/screens/orders_screen.dart';
 import '../../features/marketplace/presentation/screens/search_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
+  final supabase = Supabase.instance.client;
+
   return GoRouter(
-    initialLocation: '/home',
+    initialLocation: '/splash',
+    refreshListenable: GoRouterRefreshStream(supabase.auth.onAuthStateChange),
+    errorBuilder: (context, state) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(state.error?.toString() ?? 'Page not found'),
+          ),
+        ),
+      );
+    },
     redirect: (context, state) {
-      final supabase = Supabase.instance.client;
       final session = supabase.auth.currentSession;
+      final isSplash = state.matchedLocation == '/splash';
       final isAuthRoute =
           state.matchedLocation == '/login' ||
           state.matchedLocation == '/signup';
+
+      // Let the splash screen handle its own navigation.
+      if (isSplash) return null;
 
       if (session == null && !isAuthRoute) {
         return '/login';
@@ -34,6 +53,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/splash',
+        builder: (context, state) => const SplashScreen(),
+      ),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(
         path: '/signup',
@@ -77,3 +100,18 @@ final routerProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
+
+class GoRouterRefreshStream extends ChangeNotifier {
+  GoRouterRefreshStream(Stream<dynamic> stream) {
+    notifyListeners();
+    _subscription = stream.asBroadcastStream().listen((dynamic _) => notifyListeners());
+  }
+
+  late final StreamSubscription<dynamic> _subscription;
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
+  }
+}

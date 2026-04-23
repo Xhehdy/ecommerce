@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../app/theme/colors.dart';
+import '../../../../core/constants/app_strings.dart';
+import '../../../../core/errors/error_mapper.dart';
+import '../../../../core/payments/payments_providers.dart';
+import '../../../../core/ui/snackbars.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../auth/application/auth_provider.dart';
 import '../../../auth/data/models/user_profile_model.dart';
@@ -56,7 +61,9 @@ class ProductDetailScreen extends ConsumerWidget {
     String productId,
     String currentStatus,
   ) async {
-    final nextStatus = currentStatus == 'sold' ? 'available' : 'sold';
+    final nextStatus = (currentStatus == 'sold' || currentStatus == 'reserved')
+        ? 'available'
+        : 'sold';
 
     try {
       await ref
@@ -86,12 +93,64 @@ class ProductDetailScreen extends ConsumerWidget {
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Unable to update listing: $error'),
-          backgroundColor: AppColors.error,
+      AppSnackbars.showError(context, error);
+    }
+  }
+
+  Future<void> _deleteProduct(
+    BuildContext context,
+    WidgetRef ref,
+    String productId,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Row(
+          children: [
+            Container(
+              height: 40,
+              width: 40,
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              alignment: Alignment.center,
+              child: const Icon(Icons.delete_outline, color: AppColors.error, size: 22),
+            ),
+            const SizedBox(width: 12),
+            const Text(AppStrings.deleteConfirmTitle),
+          ],
         ),
-      );
+        content: const Text(AppStrings.deleteConfirmMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('CANCEL'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text(AppStrings.deleteListing),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await ref.read(marketplaceRepositoryProvider).deleteProduct(productId);
+      ref.invalidate(homeFeedProvider);
+      ref.invalidate(myListingsProvider);
+
+      if (!context.mounted) return;
+
+      AppSnackbars.showSuccess(context, AppStrings.deleteSuccess);
+      context.go('/home');
+    } catch (error) {
+      if (!context.mounted) return;
+      AppSnackbars.showError(context, error);
     }
   }
 
@@ -124,12 +183,7 @@ class ProductDetailScreen extends ConsumerWidget {
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Unable to update favorites: $error'),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      AppSnackbars.showError(context, error);
     }
   }
 
@@ -142,9 +196,9 @@ class ProductDetailScreen extends ConsumerWidget {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Place Order'),
+          title: const Text('Checkout'),
           content: const Text(
-            'This will create a transaction record, move the product into your purchase history, and mark the listing as sold.',
+            'You will be asked to complete payment with Paystack. If you cancel, the listing becomes available again.',
           ),
           actions: [
             TextButton(
@@ -164,10 +218,88 @@ class ProductDetailScreen extends ConsumerWidget {
       return;
     }
 
+    final repo = ref.read(marketplaceRepositoryProvider);
+    final paymentsRepo = ref.read(paymentsRepositoryProvider);
+    final supabase = Supabase.instance.client;
+    final product = ref.read(productDetailsProvider(productId)).value;
+    final email = supabase.auth.currentUser?.email;
+
+    if (product == null) {
+      if (context.mounted) {
+        AppSnackbars.showError(context, StateError('Product not loaded'));
+      }
+      return;
+    }
+
+    if (email == null || email.isEmpty) {
+      if (context.mounted) {
+        AppSnackbars.showError(context, StateError('Account email is missing'));
+      }
+      return;
+    }
+
+    final amountKobo = (product.price * 100).round();
+    String? orderId;
+
+    if (!context.mounted) {
+      return;
+    }
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return const AlertDialog(
+          content: Row(
+            children: [
+              SizedBox(
+                height: 22,
+                width: 22,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              SizedBox(width: 16),
+              Expanded(child: Text('Preparing checkout...')),
+            ],
+          ),
+        );
+      },
+    );
+
     try {
-      await ref
-          .read(marketplaceRepositoryProvider)
-          .createOrderForProduct(productId);
+      orderId = await repo.createOrderForProduct(productId);
+
+      final accessCode = await paymentsRepo.initializePaystack(
+        email: email,
+        amountKobo: amountKobo,
+        reference: orderId,
+      );
+
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+
+      final paystack = await ref.read(paystackClientProvider.future);
+      final transaction = await paystack.launch(accessCode: accessCode);
+
+      if (transaction.status == 'cancelled' || transaction.status == 'failed') {
+        await repo.cancelOrder(orderId);
+        ref.invalidate(productDetailsProvider(productId));
+        ref.invalidate(homeFeedProvider);
+        ref.invalidate(purchaseOrdersProvider);
+        ref.invalidate(salesOrdersProvider);
+
+        if (context.mounted) {
+          AppSnackbars.showSuccess(context, 'Payment cancelled.');
+        }
+        return;
+      }
+
+      final paid = await paymentsRepo.verifyPaystack(reference: orderId);
+      if (!paid) {
+        throw StateError('Payment could not be verified.');
+      }
+
+      await repo.markOrderPaid(orderId);
 
       ref.invalidate(productDetailsProvider(productId));
       ref.invalidate(homeFeedProvider);
@@ -179,12 +311,7 @@ class ProductDetailScreen extends ConsumerWidget {
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Order created successfully.'),
-          backgroundColor: AppColors.primary,
-        ),
-      );
+      AppSnackbars.showSuccess(context, 'Payment successful. Order created.');
 
       context.push('/orders');
     } catch (error) {
@@ -192,12 +319,17 @@ class ProductDetailScreen extends ConsumerWidget {
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Unable to place order: $error'),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      Navigator.of(context, rootNavigator: true).maybePop();
+      if (orderId != null) {
+        try {
+          await repo.cancelOrder(orderId);
+          ref.invalidate(productDetailsProvider(productId));
+          ref.invalidate(homeFeedProvider);
+          ref.invalidate(purchaseOrdersProvider);
+          ref.invalidate(salesOrdersProvider);
+        } catch (_) {}
+      }
+      AppSnackbars.showError(context, error);
     }
   }
 
@@ -260,12 +392,7 @@ class ProductDetailScreen extends ConsumerWidget {
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Unable to submit report: $error'),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      AppSnackbars.showError(context, error);
     } finally {
       reasonController.dispose();
     }
@@ -295,7 +422,10 @@ class ProductDetailScreen extends ConsumerWidget {
         actions: [
           if (product != null && !isOwner)
             IconButton(
-              icon: Icon(isFavorite ? Icons.favorite : Icons.favorite_border),
+              icon: Icon(
+                isFavorite ? Icons.favorite : Icons.favorite_border,
+                color: isFavorite ? Colors.pink : null,
+              ),
               onPressed: favoriteIdsAsync.isLoading
                   ? null
                   : () => _toggleFavorite(context, ref, product.id, isFavorite),
@@ -304,6 +434,12 @@ class ProductDetailScreen extends ConsumerWidget {
             IconButton(
               icon: const Icon(Icons.edit_outlined),
               onPressed: () => context.push('/product/${product.id}/edit'),
+            ),
+          if (product != null && isOwner)
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              color: AppColors.error,
+              onPressed: () => _deleteProduct(context, ref, product.id),
             ),
           if (product != null && !isOwner)
             PopupMenuButton<String>(
@@ -327,23 +463,71 @@ class ProductDetailScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               SizedBox(
-                height: 300,
+                height: 320,
                 child: product.images.isNotEmpty
-                    ? PageView.builder(
-                        itemCount: product.images.length,
-                        itemBuilder: (context, index) {
-                          return Image.network(
-                            product.images[index].imageUrl,
-                            fit: BoxFit.cover,
-                          );
-                        },
+                    ? Stack(
+                        children: [
+                          PageView.builder(
+                            itemCount: product.images.length,
+                            itemBuilder: (context, index) {
+                              return Image.network(
+                                product.images[index].imageUrl,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                              );
+                            },
+                            onPageChanged: (index) {},
+                          ),
+                          if (product.images.length > 1)
+                            Positioned(
+                              bottom: 12,
+                              left: 0,
+                              right: 0,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: List.generate(
+                                  product.images.length,
+                                  (index) => Container(
+                                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                                    width: 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: index == 0
+                                          ? Colors.white
+                                          : Colors.white.withValues(alpha: 0.4),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.2),
+                                          blurRadius: 4,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
                       )
                     : Container(
-                        color: AppColors.border,
-                        child: const Icon(
-                          Icons.image_not_supported,
-                          size: 64,
-                          color: AppColors.textSecondary,
+                        color: AppColors.surfaceMuted,
+                        child: const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.image_not_supported_outlined,
+                              size: 56,
+                              color: AppColors.textSecondary,
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'No photos yet',
+                              style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
               ),
@@ -426,23 +610,21 @@ class ProductDetailScreen extends ConsumerWidget {
                                 return Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Container(
+                                     Container(
                                       height: 56,
                                       width: 56,
                                       decoration: const BoxDecoration(
-                                        color: AppColors.surfaceMuted,
+                                        color: AppColors.primary,
                                         shape: BoxShape.circle,
                                       ),
                                       alignment: Alignment.center,
                                       child: Text(
                                         _initialsFor(sellerProfile),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium
-                                            ?.copyWith(
-                                              color: AppColors.primaryDark,
-                                              fontWeight: FontWeight.w800,
-                                            ),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w800,
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(width: 14),
@@ -573,31 +755,52 @@ class ProductDetailScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 48),
                     if (isOwner) ...[
-                      ElevatedButton(
+                      ElevatedButton.icon(
                         onPressed: () =>
                             context.push('/product/${product.id}/edit'),
-                        child: const Text('EDIT LISTING'),
+                        icon: const Icon(Icons.edit_outlined, size: 18),
+                        label: const Text(AppStrings.editListing),
                       ),
                       const SizedBox(height: 12),
-                      OutlinedButton(
+                      OutlinedButton.icon(
                         onPressed: () => _toggleProductStatus(
                           context,
                           ref,
                           product.id,
                           product.status,
                         ),
-                        child: Text(
+                        icon: Icon(
                           product.status == 'sold'
-                              ? 'MARK AVAILABLE'
-                              : 'MARK AS SOLD',
+                              ? Icons.refresh_rounded
+                              : Icons.sell_outlined,
+                          size: 18,
+                        ),
+                        label: Text(
+                          product.status == 'sold'
+                              ? AppStrings.markAvailable
+                              : AppStrings.markSold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextButton.icon(
+                        onPressed: () =>
+                            _deleteProduct(context, ref, product.id),
+                        icon: const Icon(Icons.delete_outline, size: 18),
+                        label: const Text(AppStrings.deleteListing),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.error,
                         ),
                       ),
                     ] else
                       ElevatedButton(
-                        onPressed: product.status == 'sold'
-                            ? null
-                            : () => _placeOrder(context, ref, product.id),
-                        child: const Text('PLACE ORDER'),
+                        onPressed: product.status == 'available'
+                            ? () => _placeOrder(context, ref, product.id)
+                            : null,
+                        child: Text(
+                          product.status == 'reserved'
+                              ? AppStrings.reserved
+                              : AppStrings.placeOrder,
+                        ),
                       ),
                   ],
                 ),
@@ -606,7 +809,8 @@ class ProductDetailScreen extends ConsumerWidget {
           ),
         ),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Failed to load item: $e')),
+        error: (e, _) =>
+            Center(child: Text(ErrorMapper.toAppException(e).message)),
       ),
     );
   }

@@ -79,7 +79,7 @@ class MarketplaceOrder {
     this.item,
   });
 
-  bool get isPending => status == 'pending';
+  bool get isPending => status == 'pending' || status == 'pending_payment';
 
   factory MarketplaceOrder.fromJson(
     Map<String, dynamic> json, {

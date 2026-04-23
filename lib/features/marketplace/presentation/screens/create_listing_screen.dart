@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../app/theme/colors.dart';
+import '../../../../core/ui/network_image.dart';
+import '../../../../core/ui/snackbars.dart';
 import '../../application/marketplace_providers.dart';
 import '../../data/models/product_model.dart';
 import '../../data/repositories/marketplace_repository.dart';
@@ -73,7 +75,17 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
       final title = _titleController.text.trim();
       final description = _descriptionController.text.trim();
       final normalizedDescription = description.isEmpty ? null : description;
-      final price = double.parse(_priceController.text);
+      final priceText = _priceController.text.trim();
+      final price = double.tryParse(priceText);
+      if (price == null) {
+        if (mounted) {
+          AppSnackbars.showError(
+            context,
+            StateError('Invalid price'),
+          );
+        }
+        return;
+      }
 
       if (widget.productId == null) {
         await repo.createProduct(
@@ -103,26 +115,15 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
 
       if (mounted) {
         context.pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              widget.productId == null
-                  ? 'Listing created successfully!'
-                  : 'Listing updated successfully!',
-            ),
-            backgroundColor: AppColors.primary,
-          ),
+        AppSnackbars.showSuccess(
+          context,
+          widget.productId == null
+              ? 'Listing created successfully!'
+              : 'Listing updated successfully!',
         );
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
+      if (mounted) AppSnackbars.showError(context, e);
     } finally {
       if (mounted) {
         setState(() => _isSubmitting = false);
@@ -209,10 +210,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                                 child: SizedBox(
                                   height: 108,
                                   width: 108,
-                                  child: Image.network(
-                                    image.imageUrl,
-                                    fit: BoxFit.cover,
-                                  ),
+                                  child: AppNetworkImage(url: image.imageUrl),
                                 ),
                               ),
                             ),
@@ -235,28 +233,31 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                                   Positioned(
                                     right: 6,
                                     top: 6,
-                                    child: GestureDetector(
-                                      onTap: () {
+                                    child: IconButton(
+                                      tooltip: 'Remove photo',
+                                      style: IconButton.styleFrom(
+                                        backgroundColor: Colors.black54,
+                                        minimumSize: const Size(24, 24),
+                                        padding: EdgeInsets.zero,
+                                      ),
+                                      iconSize: 16,
+                                      icon: const Icon(
+                                        Icons.close,
+                                        color: Colors.white,
+                                      ),
+                                      onPressed: () {
                                         setState(() {
                                           _newImages.removeAt(i);
                                         });
                                       },
-                                      child: const CircleAvatar(
-                                        radius: 12,
-                                        backgroundColor: Colors.black54,
-                                        child: Icon(
-                                          Icons.close,
-                                          size: 16,
-                                          color: Colors.white,
-                                        ),
-                                      ),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                          GestureDetector(
+                          InkWell(
                             onTap: _pickImage,
+                            borderRadius: BorderRadius.circular(16),
                             child: Container(
                               height: 108,
                               width: 108,

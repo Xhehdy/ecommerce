@@ -24,25 +24,46 @@ class MarketplaceBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return NavigationBar(
-      selectedIndex: currentTab.index,
-      height: 76,
-      onDestinationSelected: (index) {
-        final selectedTab = MarketplaceTab.values[index];
-        if (selectedTab == currentTab) {
-          return;
-        }
-
-        context.go(selectedTab.route);
-      },
-      destinations: [
-        for (final tab in MarketplaceTab.values)
-          NavigationDestination(
-            icon: Icon(tab.icon, color: AppColors.textSecondary),
-            selectedIcon: Icon(tab.selectedIcon, color: AppColors.primary),
-            label: tab.label,
-          ),
-      ],
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(
+          top: BorderSide(color: AppColors.border, width: 0.5),
+        ),
+      ),
+      child: NavigationBar(
+        selectedIndex: currentTab.index,
+        height: 72,
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        indicatorColor: AppColors.surfaceMuted,
+        indicatorShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        onDestinationSelected: (index) {
+          final selectedTab = MarketplaceTab.values[index];
+          if (selectedTab == currentTab) return;
+          context.go(selectedTab.route);
+        },
+        destinations: [
+          for (final tab in MarketplaceTab.values)
+            NavigationDestination(
+              icon: Icon(
+                tab.icon,
+                color: AppColors.textSecondary,
+                size: 22,
+              ),
+              selectedIcon: Icon(
+                tab.selectedIcon,
+                color: AppColors.primary,
+                size: 22,
+              ),
+              label: tab.label,
+            ),
+        ],
+      ),
     );
   }
 }

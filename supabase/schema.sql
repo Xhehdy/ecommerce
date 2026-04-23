@@ -1,10 +1,15 @@
 -- supabase/schema.sql
--- Initial Schema for Marketplace App
+-- Idempotent schema for ATELIER Marketplace.
+-- Safe to run multiple times — uses IF NOT EXISTS, DROP ... IF EXISTS, ON CONFLICT.
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
--- 1. Profiles Table (extends Supabase Auth Users)
-CREATE TABLE profiles (
+-- ==========================================
+-- TABLES
+-- ==========================================
+
+-- 1. Profiles (extends Supabase Auth Users)
+CREATE TABLE IF NOT EXISTS profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     email TEXT UNIQUE NOT NULL,
     full_name TEXT,
@@ -15,8 +20,8 @@ CREATE TABLE profiles (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 2. Categories Table
-CREATE TABLE categories (
+-- 2. Categories
+CREATE TABLE IF NOT EXISTS categories (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     slug TEXT UNIQUE NOT NULL
@@ -33,48 +38,51 @@ VALUES
 ON CONFLICT (slug) DO UPDATE
 SET name = EXCLUDED.name;
 
--- 3. Products Table
-CREATE TABLE products (
+-- 3. Products
+CREATE TABLE IF NOT EXISTS products (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     seller_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
     category_id INT REFERENCES categories(id) ON DELETE SET NULL,
     title TEXT NOT NULL,
     description TEXT,
     price DECIMAL(10, 2) NOT NULL,
-    condition TEXT, -- e.g., 'Brand New', 'Like New', 'Used'
-    status TEXT DEFAULT 'available', -- 'available', 'sold', 'hidden'
+    condition TEXT,
+    status TEXT DEFAULT 'available',
     location TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 4. Product Images Table
-CREATE TABLE product_images (
+-- 4. Product Images
+CREATE TABLE IF NOT EXISTS product_images (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     image_url TEXT NOT NULL,
     sort_order INT DEFAULT 0
 );
 
--- 5. Favorites Table (associative table)
-CREATE TABLE favorites (
+-- 5. Favorites
+CREATE TABLE IF NOT EXISTS favorites (
     user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
     product_id UUID REFERENCES products(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     PRIMARY KEY (user_id, product_id)
 );
 
--- 6. Orders Table
-CREATE TABLE orders (
+-- 6. Orders
+CREATE TABLE IF NOT EXISTS orders (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     buyer_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
     seller_id UUID NOT NULL REFERENCES profiles(id),
     total_amount DECIMAL(10, 2) NOT NULL,
-    status TEXT DEFAULT 'pending', -- 'pending', 'paid', 'shipped', 'completed', 'cancelled'
+    status TEXT DEFAULT 'pending_payment',
+    payment_provider TEXT,
+    payment_reference TEXT,
+    paid_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 7. Order Items Table (in case of multiple items per order later, or just normalization)
-CREATE TABLE order_items (
+-- 7. Order Items
+CREATE TABLE IF NOT EXISTS order_items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
     product_id UUID NOT NULL REFERENCES products(id),
@@ -82,18 +90,18 @@ CREATE TABLE order_items (
     UNIQUE (product_id)
 );
 
--- 8. Reports Table (for reporting listings/users)
-CREATE TABLE reports (
+-- 8. Reports
+CREATE TABLE IF NOT EXISTS reports (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     reporter_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
     product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     reason TEXT NOT NULL,
-    status TEXT DEFAULT 'pending', -- 'pending', 'reviewed', 'resolved'
+    status TEXT DEFAULT 'pending',
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 9. Recent Searches Table
-CREATE TABLE recent_searches (
+-- 9. Recent Searches
+CREATE TABLE IF NOT EXISTS recent_searches (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
     query TEXT DEFAULT '',
@@ -105,13 +113,11 @@ CREATE TABLE recent_searches (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Note: We will add Row Level Security (RLS) policies in the next step.
-
 -- ==========================================
--- ROW LEVEL SECURITY (RLS) POLICIES
+-- ROW LEVEL SECURITY (RLS)
 -- ==========================================
 
--- Enable RLS on all tables
+-- Enable RLS (safe to call multiple times)
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
@@ -122,103 +128,194 @@ ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE recent_searches ENABLE ROW LEVEL SECURITY;
 
--- Profiles:
--- Anyone can view profiles (to see sellers).
+-- ──────────────────────────────────────────
+-- Helper: drop a policy if it already exists.
+-- Accepts schema, table, and policy name so it works for both
+-- public tables AND storage.objects.
+-- ──────────────────────────────────────────
+CREATE OR REPLACE FUNCTION _drop_policy_if_exists(
+    _schema TEXT,
+    _table  TEXT,
+    _policy TEXT
+) RETURNS VOID AS $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = _schema
+          AND tablename  = _table
+          AND policyname = _policy
+    ) THEN
+        EXECUTE format('DROP POLICY %I ON %I.%I', _policy, _schema, _table);
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ── Profiles ────────────────────────────────────────────
+
+SELECT _drop_policy_if_exists('public', 'profiles', 'Public profiles are viewable by everyone.');
 CREATE POLICY "Public profiles are viewable by everyone."
 ON profiles FOR SELECT USING (true);
--- Users can insert their own profile.
+
+SELECT _drop_policy_if_exists('public', 'profiles', 'Users can insert their own profile.');
 CREATE POLICY "Users can insert their own profile."
 ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
--- Users can update own profile.
+
+SELECT _drop_policy_if_exists('public', 'profiles', 'Users can update own profile.');
 CREATE POLICY "Users can update own profile."
 ON profiles FOR UPDATE USING (auth.uid() = id);
 
--- Categories:
--- Anyone can view categories.
+-- ── Categories ──────────────────────────────────────────
+
+SELECT _drop_policy_if_exists('public', 'categories', 'Categories are viewable by everyone.');
 CREATE POLICY "Categories are viewable by everyone."
 ON categories FOR SELECT USING (true);
--- Only authenticated admins can insert/update (Assume service role for now).
 
--- Products:
--- Anyone can view available products.
+-- ── Products ────────────────────────────────────────────
+
+SELECT _drop_policy_if_exists('public', 'products', 'Products are viewable by everyone.');
 CREATE POLICY "Products are viewable by everyone."
-ON products FOR SELECT USING (status = 'available' OR seller_id = auth.uid());
--- Sellers can insert their own products.
+ON products FOR SELECT USING (
+    status = 'available'
+    OR seller_id = auth.uid()
+    OR EXISTS (
+        SELECT 1
+        FROM order_items
+        JOIN orders ON orders.id = order_items.order_id
+        WHERE order_items.product_id = products.id
+          AND (orders.buyer_id = auth.uid() OR orders.seller_id = auth.uid())
+    )
+);
+
+SELECT _drop_policy_if_exists('public', 'products', 'Sellers can create products.');
 CREATE POLICY "Sellers can create products."
 ON products FOR INSERT WITH CHECK (auth.uid() = seller_id);
--- Sellers can update their own products.
+
+SELECT _drop_policy_if_exists('public', 'products', 'Sellers can update own products.');
 CREATE POLICY "Sellers can update own products."
 ON products FOR UPDATE USING (auth.uid() = seller_id) WITH CHECK (auth.uid() = seller_id);
--- Sellers can delete their own products.
+
+SELECT _drop_policy_if_exists('public', 'products', 'Sellers can delete own products.');
 CREATE POLICY "Sellers can delete own products."
 ON products FOR DELETE USING (auth.uid() = seller_id);
 
--- Product Images:
--- Anyone can view product images.
+-- ── Product Images ──────────────────────────────────────
+
+SELECT _drop_policy_if_exists('public', 'product_images', 'Product images are viewable by everyone.');
 CREATE POLICY "Product images are viewable by everyone."
 ON product_images FOR SELECT USING (
     EXISTS (
         SELECT 1
         FROM products
         WHERE id = product_images.product_id
-          AND (status = 'available' OR seller_id = auth.uid())
+          AND (
+              status = 'available'
+              OR seller_id = auth.uid()
+              OR EXISTS (
+                  SELECT 1
+                  FROM order_items
+                  JOIN orders ON orders.id = order_items.order_id
+                  WHERE order_items.product_id = products.id
+                    AND (orders.buyer_id = auth.uid() OR orders.seller_id = auth.uid())
+              )
+          )
     )
 );
--- Sellers can manage images for their products.
+
+SELECT _drop_policy_if_exists('public', 'product_images', 'Sellers can insert images for own products.');
 CREATE POLICY "Sellers can insert images for own products."
 ON product_images FOR INSERT WITH CHECK (
     EXISTS (SELECT 1 FROM products WHERE id = product_images.product_id AND seller_id = auth.uid())
 );
+
+SELECT _drop_policy_if_exists('public', 'product_images', 'Sellers can update images for own products.');
 CREATE POLICY "Sellers can update images for own products."
 ON product_images FOR UPDATE USING (
     EXISTS (SELECT 1 FROM products WHERE id = product_images.product_id AND seller_id = auth.uid())
 ) WITH CHECK (
     EXISTS (SELECT 1 FROM products WHERE id = product_images.product_id AND seller_id = auth.uid())
 );
+
+SELECT _drop_policy_if_exists('public', 'product_images', 'Sellers can delete images for own products.');
 CREATE POLICY "Sellers can delete images for own products."
 ON product_images FOR DELETE USING (
     EXISTS (SELECT 1 FROM products WHERE id = product_images.product_id AND seller_id = auth.uid())
 );
 
--- Favorites:
--- Users can only view their own favorites.
+-- ── Favorites ───────────────────────────────────────────
+
+SELECT _drop_policy_if_exists('public', 'favorites', 'Users can view own favorites.');
 CREATE POLICY "Users can view own favorites."
 ON favorites FOR SELECT USING (auth.uid() = user_id);
--- Users can add/remove their own favorites.
+
+SELECT _drop_policy_if_exists('public', 'favorites', 'Users can insert own favorites.');
 CREATE POLICY "Users can insert own favorites."
 ON favorites FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+SELECT _drop_policy_if_exists('public', 'favorites', 'Users can delete own favorites.');
 CREATE POLICY "Users can delete own favorites."
 ON favorites FOR DELETE USING (auth.uid() = user_id);
 
--- Orders:
--- Buyers and Sellers can view their orders.
+-- ── Orders ──────────────────────────────────────────────
+
+SELECT _drop_policy_if_exists('public', 'orders', 'Buyers and sellers can view their own orders.');
 CREATE POLICY "Buyers and sellers can view their own orders."
 ON orders FOR SELECT USING (auth.uid() = buyer_id OR auth.uid() = seller_id);
--- Buyers can create orders.
+
+SELECT _drop_policy_if_exists('public', 'orders', 'Buyers can create orders.');
 CREATE POLICY "Buyers can create orders."
 ON orders FOR INSERT WITH CHECK (auth.uid() = buyer_id);
 
--- Order Items:
--- Buyers and Sellers can view their order items.
+-- ── Order Items ─────────────────────────────────────────
+
+SELECT _drop_policy_if_exists('public', 'order_items', 'Users can view their order items.');
 CREATE POLICY "Users can view their order items."
 ON order_items FOR SELECT USING (
     EXISTS (
-        SELECT 1 FROM orders 
-        WHERE id = order_items.order_id 
+        SELECT 1 FROM orders
+        WHERE id = order_items.order_id
         AND (buyer_id = auth.uid() OR seller_id = auth.uid())
     )
 );
--- Buyers can insert order items.
+
+SELECT _drop_policy_if_exists('public', 'order_items', 'Buyers can insert order items.');
 CREATE POLICY "Buyers can insert order items."
 ON order_items FOR INSERT WITH CHECK (
     EXISTS (
-        SELECT 1 FROM orders 
-        WHERE id = order_items.order_id 
+        SELECT 1 FROM orders
+        WHERE id = order_items.order_id
         AND buyer_id = auth.uid()
     )
 );
 
-CREATE OR REPLACE FUNCTION public.create_marketplace_order(target_product_id UUID)
+-- ── Reports ─────────────────────────────────────────────
+
+SELECT _drop_policy_if_exists('public', 'reports', 'Users can create reports.');
+CREATE POLICY "Users can create reports."
+ON reports FOR INSERT WITH CHECK (auth.uid() = reporter_id);
+
+SELECT _drop_policy_if_exists('public', 'reports', 'Users can view own reports.');
+CREATE POLICY "Users can view own reports."
+ON reports FOR SELECT USING (auth.uid() = reporter_id);
+
+-- ── Recent Searches ─────────────────────────────────────
+
+SELECT _drop_policy_if_exists('public', 'recent_searches', 'Users can view own recent searches.');
+CREATE POLICY "Users can view own recent searches."
+ON recent_searches FOR SELECT USING (auth.uid() = user_id);
+
+SELECT _drop_policy_if_exists('public', 'recent_searches', 'Users can insert own recent searches.');
+CREATE POLICY "Users can insert own recent searches."
+ON recent_searches FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+SELECT _drop_policy_if_exists('public', 'recent_searches', 'Users can delete own recent searches.');
+CREATE POLICY "Users can delete own recent searches."
+ON recent_searches FOR DELETE USING (auth.uid() = user_id);
+
+-- ==========================================
+-- FUNCTIONS (CREATE OR REPLACE = idempotent)
+-- ==========================================
+
+CREATE OR REPLACE FUNCTION public.create_marketplace_order_pending(target_product_id UUID)
 RETURNS UUID
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -256,39 +353,127 @@ BEGIN
         current_user_id,
         listing_record.seller_id,
         listing_record.price,
-        'pending'
+        'pending_payment'
     )
     RETURNING id INTO new_order_id;
+
+    UPDATE orders
+    SET payment_provider = 'paystack',
+        payment_reference = new_order_id::text
+    WHERE id = new_order_id;
 
     INSERT INTO order_items (order_id, product_id, price)
     VALUES (new_order_id, listing_record.id, listing_record.price);
 
     UPDATE products
-    SET status = 'sold'
+    SET status = 'reserved'
     WHERE id = listing_record.id;
 
     RETURN new_order_id;
 END;
 $$;
 
--- Reports:
--- Authenticated users can create reports.
-CREATE POLICY "Users can create reports."
-ON reports FOR INSERT WITH CHECK (auth.uid() = reporter_id);
--- Only admins or the reporter can view their reports.
-CREATE POLICY "Users can view own reports."
-ON reports FOR SELECT USING (auth.uid() = reporter_id);
+CREATE OR REPLACE FUNCTION public.mark_marketplace_order_paid(target_order_id UUID)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    current_user_id UUID := auth.uid();
+    order_record orders%ROWTYPE;
+    ordered_product_id UUID;
+BEGIN
+    IF current_user_id IS NULL THEN
+        RAISE EXCEPTION 'Authentication required.';
+    END IF;
 
--- Recent searches:
-CREATE POLICY "Users can view own recent searches."
-ON recent_searches FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert own recent searches."
-ON recent_searches FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can delete own recent searches."
-ON recent_searches FOR DELETE USING (auth.uid() = user_id);
+    SELECT *
+    INTO order_record
+    FROM orders
+    WHERE id = target_order_id
+    FOR UPDATE;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Order not found.';
+    END IF;
+
+    IF order_record.buyer_id <> current_user_id THEN
+        RAISE EXCEPTION 'You can only confirm payment for your own orders.';
+    END IF;
+
+    IF order_record.status <> 'pending_payment' THEN
+        RAISE EXCEPTION 'Order is not awaiting payment.';
+    END IF;
+
+    SELECT product_id
+    INTO ordered_product_id
+    FROM order_items
+    WHERE order_id = order_record.id
+    LIMIT 1;
+
+    UPDATE orders
+    SET status = 'paid',
+        paid_at = NOW()
+    WHERE id = order_record.id;
+
+    UPDATE products
+    SET status = 'sold'
+    WHERE id = ordered_product_id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.cancel_marketplace_order(target_order_id UUID)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    current_user_id UUID := auth.uid();
+    order_record orders%ROWTYPE;
+    ordered_product_id UUID;
+BEGIN
+    IF current_user_id IS NULL THEN
+        RAISE EXCEPTION 'Authentication required.';
+    END IF;
+
+    SELECT *
+    INTO order_record
+    FROM orders
+    WHERE id = target_order_id
+    FOR UPDATE;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Order not found.';
+    END IF;
+
+    IF order_record.buyer_id <> current_user_id THEN
+        RAISE EXCEPTION 'You can only cancel your own orders.';
+    END IF;
+
+    IF order_record.status <> 'pending_payment' THEN
+        RAISE EXCEPTION 'Only unpaid orders can be cancelled.';
+    END IF;
+
+    SELECT product_id
+    INTO ordered_product_id
+    FROM order_items
+    WHERE order_id = order_record.id
+    LIMIT 1;
+
+    UPDATE orders
+    SET status = 'cancelled'
+    WHERE id = order_record.id;
+
+    UPDATE products
+    SET status = 'available'
+    WHERE id = ordered_product_id;
+END;
+$$;
 
 -- ==========================================
--- PROFILE AUTOMATION
+-- PROFILE AUTOMATION (trigger)
 -- ==========================================
 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -305,6 +490,7 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
 AFTER INSERT ON auth.users
 FOR EACH ROW
@@ -318,22 +504,29 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES ('product-images', 'product-images', true)
 ON CONFLICT (id) DO NOTHING;
 
+SELECT _drop_policy_if_exists('storage', 'objects', 'Public can view product image files.');
 CREATE POLICY "Public can view product image files."
 ON storage.objects FOR SELECT
 USING (bucket_id = 'product-images');
 
+SELECT _drop_policy_if_exists('storage', 'objects', 'Authenticated users can upload product image files.');
 CREATE POLICY "Authenticated users can upload product image files."
 ON storage.objects FOR INSERT
 TO authenticated
 WITH CHECK (bucket_id = 'product-images' AND owner = auth.uid());
 
+SELECT _drop_policy_if_exists('storage', 'objects', 'Users can update own product image files.');
 CREATE POLICY "Users can update own product image files."
 ON storage.objects FOR UPDATE
 TO authenticated
 USING (bucket_id = 'product-images' AND owner = auth.uid())
 WITH CHECK (bucket_id = 'product-images' AND owner = auth.uid());
 
+SELECT _drop_policy_if_exists('storage', 'objects', 'Users can delete own product image files.');
 CREATE POLICY "Users can delete own product image files."
 ON storage.objects FOR DELETE
 TO authenticated
 USING (bucket_id = 'product-images' AND owner = auth.uid());
+
+-- Clean up helper (optional — comment out if you want to keep it)
+-- DROP FUNCTION IF EXISTS _drop_policy_if_exists(TEXT, TEXT, TEXT);

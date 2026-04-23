@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/theme/colors.dart';
+import '../../../../core/errors/error_mapper.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../application/marketplace_providers.dart';
 import '../../data/models/category_model.dart';
@@ -269,7 +270,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     error: (error, _) => Center(
                       child: Padding(
                         padding: const EdgeInsets.all(24),
-                        child: Text('Unable to load recent searches: $error'),
+                        child: Text(
+                          ErrorMapper.toAppException(error).message,
+                        ),
                       ),
                     ),
                   )
@@ -336,7 +339,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     error: (error, _) => Center(
                       child: Padding(
                         padding: const EdgeInsets.all(24),
-                        child: Text('Unable to search products: $error'),
+                        child: Text(
+                          ErrorMapper.toAppException(error).message,
+                        ),
                       ),
                     ),
                   ),

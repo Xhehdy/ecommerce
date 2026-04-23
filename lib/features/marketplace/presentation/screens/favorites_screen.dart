@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/colors.dart';
+import '../../../../core/constants/app_strings.dart';
+import '../../../../core/errors/error_mapper.dart';
+import '../../../../core/ui/shimmer.dart';
 import '../../application/marketplace_providers.dart';
 import '../widgets/product_card.dart';
 
@@ -16,7 +19,7 @@ class FavoritesScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: const Text('Saved'),
+        title: const Text(AppStrings.saved),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new),
           onPressed: () {
@@ -24,7 +27,6 @@ class FavoritesScreen extends ConsumerWidget {
               context.pop();
               return;
             }
-
             context.go('/home');
           },
         ),
@@ -40,8 +42,9 @@ class FavoritesScreen extends ConsumerWidget {
               return ListView(
                 padding: const EdgeInsets.all(24),
                 children: [
+                  const SizedBox(height: 40),
                   Container(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(28),
                     decoration: BoxDecoration(
                       color: AppColors.surface,
                       borderRadius: BorderRadius.circular(24),
@@ -57,27 +60,30 @@ class FavoritesScreen extends ConsumerWidget {
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
-                            Icons.favorite_border,
-                            size: 36,
+                            Icons.favorite_border_rounded,
+                            size: 32,
                             color: AppColors.textSecondary,
                           ),
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'You have not saved any products yet.',
-                          style: Theme.of(context).textTheme.titleMedium,
+                          AppStrings.noFavorites,
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w700),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Use the heart button on a product to add it here for quick access.',
+                          'Tap the heart on a product to save it here.',
                           style: Theme.of(context).textTheme.bodyMedium,
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 18),
+                        const SizedBox(height: 20),
                         ElevatedButton(
                           onPressed: () => context.go('/home'),
-                          child: const Text('BROWSE LISTINGS'),
+                          child: const Text(AppStrings.browseListings),
                         ),
                       ],
                     ),
@@ -91,54 +97,15 @@ class FavoritesScreen extends ConsumerWidget {
               slivers: [
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                    child: Container(
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            height: 52,
-                            width: 52,
-                            decoration: const BoxDecoration(
-                              color: AppColors.surfaceMuted,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.favorite,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Saved for later',
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.titleMedium,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${products.length} item${products.length == 1 ? '' : 's'} you may want to come back to.',
-                                  style: Theme.of(context).textTheme.bodyMedium,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                    child: Text(
+                      '${products.length} saved item${products.length == 1 ? '' : 's'}',
+                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ),
                 ),
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                   sliver: SliverGrid(
                     gridDelegate:
                         const SliverGridDelegateWithMaxCrossAxisExtent(
@@ -155,15 +122,29 @@ class FavoritesScreen extends ConsumerWidget {
               ],
             );
           },
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => _buildShimmerGrid(),
           error: (error, _) => Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
-              child: Text('Unable to load favorites: $error'),
+              child: Text(ErrorMapper.toAppException(error).message),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildShimmerGrid() {
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 240,
+        mainAxisExtent: 290,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 18,
+      ),
+      itemCount: 6,
+      itemBuilder: (_, __) => const ProductCardShimmer(),
     );
   }
 }

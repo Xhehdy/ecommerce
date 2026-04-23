@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/colors.dart';
+import '../../../../core/constants/app_strings.dart';
+import '../../../../core/errors/error_mapper.dart';
+import '../../../../core/ui/snackbars.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../application/marketplace_providers.dart';
 import '../../data/models/product_model.dart';
@@ -16,7 +19,9 @@ class MyListingsScreen extends ConsumerWidget {
     WidgetRef ref,
     Product product,
   ) async {
-    final nextStatus = product.status == 'sold' ? 'available' : 'sold';
+    final nextStatus = (product.status == 'sold' || product.status == 'reserved')
+        ? 'available'
+        : 'sold';
 
     try {
       await ref
@@ -27,9 +32,7 @@ class MyListingsScreen extends ConsumerWidget {
       ref.invalidate(homeFeedProvider);
       ref.invalidate(productDetailsProvider(product.id));
 
-      if (!context.mounted) {
-        return;
-      }
+      if (!context.mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -42,16 +45,51 @@ class MyListingsScreen extends ConsumerWidget {
         ),
       );
     } catch (error) {
-      if (!context.mounted) {
-        return;
-      }
+      if (!context.mounted) return;
+      AppSnackbars.showError(context, error);
+    }
+  }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Unable to update listing: $error'),
-          backgroundColor: AppColors.error,
-        ),
-      );
+  Future<void> _deleteProduct(
+    BuildContext context,
+    WidgetRef ref,
+    Product product,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(AppStrings.deleteConfirmTitle),
+        content: const Text(AppStrings.deleteConfirmMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('CANCEL'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+            ),
+            child: const Text(AppStrings.deleteListing),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await ref.read(marketplaceRepositoryProvider).deleteProduct(product.id);
+
+      ref.invalidate(myListingsProvider);
+      ref.invalidate(homeFeedProvider);
+
+      if (!context.mounted) return;
+      AppSnackbars.showSuccess(context, AppStrings.deleteSuccess);
+    } catch (error) {
+      if (!context.mounted) return;
+      AppSnackbars.showError(context, error);
     }
   }
 
@@ -60,7 +98,12 @@ class MyListingsScreen extends ConsumerWidget {
     final listingsAsync = ref.watch(myListingsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('My Listings')),
+      appBar: AppBar(title: const Text(AppStrings.myListings)),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.push('/sell'),
+        backgroundColor: AppColors.primary,
+        child: const Icon(Icons.add_rounded, color: Colors.white),
+      ),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(myListingsProvider);
@@ -117,42 +160,34 @@ class MyListingsScreen extends ConsumerWidget {
               );
             }
 
-            final liveListings = products.where((product) {
-              return product.status != 'sold';
-            }).length;
+            final liveListings = products.where((p) => p.status != 'sold').length;
             final soldListings = products.length - liveListings;
-            final portfolioValue = products.fold<double>(0, (total, product) {
-              return total + product.price;
-            });
+            final portfolioValue = products.fold<double>(0, (t, p) => t + p.price);
 
             return ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
               itemCount: products.length + 1,
-              separatorBuilder: (_, _) => const SizedBox(height: 16),
+              separatorBuilder: (_, __) => const SizedBox(height: 14),
               itemBuilder: (context, index) {
                 if (index == 0) {
                   return Container(
-                    padding: const EdgeInsets.all(18),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: AppColors.border),
                     ),
-                    child: Wrap(
-                      spacing: 14,
-                      runSpacing: 14,
+                    child: Row(
                       children: [
-                        _ListingSummaryChip(
-                          label: 'Live now',
-                          value: '$liveListings',
-                        ),
-                        _ListingSummaryChip(
-                          label: 'Sold',
-                          value: '$soldListings',
-                        ),
-                        _ListingSummaryChip(
-                          label: 'Portfolio value',
-                          value: formatNaira(portfolioValue),
+                        _StatChip(label: 'Live', value: '$liveListings'),
+                        const SizedBox(width: 12),
+                        _StatChip(label: 'Sold', value: '$soldListings'),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _StatChip(
+                            label: 'Value',
+                            value: formatNaira(portfolioValue),
+                          ),
                         ),
                       ],
                     ),
@@ -163,6 +198,7 @@ class MyListingsScreen extends ConsumerWidget {
                 final imageUrl = product.images.isNotEmpty
                     ? product.images.first.imageUrl
                     : null;
+                final isSold = product.status == 'sold';
 
                 return Container(
                   decoration: BoxDecoration(
@@ -183,8 +219,8 @@ class MyListingsScreen extends ConsumerWidget {
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(14),
                                 child: SizedBox(
-                                  height: 92,
-                                  width: 92,
+                                  height: 88,
+                                  width: 88,
                                   child: imageUrl == null
                                       ? Container(
                                           color: AppColors.surfaceMuted,
@@ -199,18 +235,16 @@ class MyListingsScreen extends ConsumerWidget {
                                         ),
                                 ),
                               ),
-                              const SizedBox(width: 16),
+                              const SizedBox(width: 14),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       product.title,
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.titleMedium,
+                                      style: Theme.of(context).textTheme.titleMedium,
                                     ),
-                                    const SizedBox(height: 8),
+                                    const SizedBox(height: 6),
                                     Text(
                                       formatNaira(product.price),
                                       style: Theme.of(context)
@@ -222,38 +256,25 @@ class MyListingsScreen extends ConsumerWidget {
                                           ),
                                     ),
                                     const SizedBox(height: 8),
-                                    Text(
-                                      product.condition?.trim().isNotEmpty ==
-                                              true
-                                          ? product.condition!
-                                          : 'Ready for campus pickup',
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodyMedium,
-                                    ),
-                                    const SizedBox(height: 8),
                                     Container(
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 10,
-                                        vertical: 6,
+                                        vertical: 5,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: product.status == 'sold'
+                                        color: isSold
                                             ? Colors.orange.shade50
-                                            : Colors.green.shade50,
-                                        borderRadius: BorderRadius.circular(
-                                          999,
-                                        ),
+                                            : AppColors.successSoft,
+                                        borderRadius: BorderRadius.circular(999),
                                       ),
                                       child: Text(
-                                        product.status == 'sold'
-                                            ? 'Sold'
-                                            : 'Available',
+                                        isSold ? 'Sold' : 'Available',
                                         style: TextStyle(
-                                          color: product.status == 'sold'
+                                          color: isSold
                                               ? Colors.orange.shade800
-                                              : Colors.green.shade800,
-                                          fontWeight: FontWeight.w600,
+                                              : AppColors.primaryDark,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 12,
                                         ),
                                       ),
                                     ),
@@ -262,9 +283,27 @@ class MyListingsScreen extends ConsumerWidget {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 14),
                           Row(
                             children: [
+                              // Delete
+                              SizedBox(
+                                height: 40,
+                                width: 40,
+                                child: IconButton.outlined(
+                                  onPressed: () =>
+                                      _deleteProduct(context, ref, product),
+                                  icon: const Icon(Icons.delete_outline, size: 18),
+                                  style: IconButton.styleFrom(
+                                    foregroundColor: AppColors.error,
+                                    side: const BorderSide(color: AppColors.border),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
                               Expanded(
                                 child: OutlinedButton(
                                   onPressed: () => context.push(
@@ -273,7 +312,7 @@ class MyListingsScreen extends ConsumerWidget {
                                   child: const Text('EDIT'),
                                 ),
                               ),
-                              const SizedBox(width: 12),
+                              const SizedBox(width: 10),
                               Expanded(
                                 child: ElevatedButton(
                                   onPressed: () => _toggleProductStatus(
@@ -282,9 +321,7 @@ class MyListingsScreen extends ConsumerWidget {
                                     product,
                                   ),
                                   child: Text(
-                                    product.status == 'sold'
-                                        ? 'MARK AVAILABLE'
-                                        : 'MARK SOLD',
+                                    isSold ? 'MARK AVAILABLE' : 'MARK SOLD',
                                   ),
                                 ),
                               ),
@@ -302,7 +339,7 @@ class MyListingsScreen extends ConsumerWidget {
           error: (error, _) => Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
-              child: Text('Unable to load your listings: $error'),
+              child: Text(ErrorMapper.toAppException(error).message),
             ),
           ),
         ),
@@ -311,19 +348,19 @@ class MyListingsScreen extends ConsumerWidget {
   }
 }
 
-class _ListingSummaryChip extends StatelessWidget {
+class _StatChip extends StatelessWidget {
   final String label;
   final String value;
 
-  const _ListingSummaryChip({required this.label, required this.value});
+  const _StatChip({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: AppColors.surfaceMuted,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -332,11 +369,11 @@ class _ListingSummaryChip extends StatelessWidget {
           Text(
             value,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: AppColors.primaryDark,
-              fontWeight: FontWeight.w800,
-            ),
+                  color: AppColors.primaryDark,
+                  fontWeight: FontWeight.w800,
+                ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Text(label, style: Theme.of(context).textTheme.bodySmall),
         ],
       ),

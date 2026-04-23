@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/colors.dart';
+import '../../../../core/constants/app_strings.dart';
+import '../../../../core/errors/error_mapper.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../application/marketplace_providers.dart';
 import '../../data/models/order_model.dart';
@@ -17,12 +19,20 @@ class OrdersScreen extends ConsumerWidget {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Orders'),
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Purchases'),
-              Tab(text: 'Sales'),
+          title: const Text(AppStrings.orders),
+          bottom: TabBar(
+            tabs: const [
+              Tab(text: AppStrings.purchases),
+              Tab(text: AppStrings.sales),
             ],
+            indicatorColor: AppColors.primary,
+            indicatorWeight: 2.5,
+            labelColor: AppColors.primary,
+            unselectedLabelColor: AppColors.textSecondary,
+            labelStyle: const TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
+            ),
           ),
         ),
         bottomNavigationBar: const MarketplaceBottomNavBar(
@@ -32,11 +42,9 @@ class OrdersScreen extends ConsumerWidget {
           children: [
             _OrdersList(
               ordersAsync: ref.watch(purchaseOrdersProvider),
-              emptyTitle: 'No purchases yet',
+              emptyTitle: AppStrings.noPurchases,
               emptyMessage:
                   'Place an order from a product page and it will show up here.',
-              secondaryMessage:
-                  'Browse the marketplace, compare listings, and your next order will be tracked here from the moment you confirm.',
               counterpartyLabel: 'Seller',
               actionLabel: 'Browse Listings',
               actionRoute: '/home',
@@ -47,11 +55,9 @@ class OrdersScreen extends ConsumerWidget {
             ),
             _OrdersList(
               ordersAsync: ref.watch(salesOrdersProvider),
-              emptyTitle: 'No sales yet',
+              emptyTitle: AppStrings.noSales,
               emptyMessage:
                   'When someone orders one of your listings, it will appear here.',
-              secondaryMessage:
-                  'Strong photos, clear pricing, and a complete profile make buyers trust your listings faster.',
               counterpartyLabel: 'Buyer',
               actionLabel: 'Open My Listings',
               actionRoute: '/my-listings',
@@ -71,7 +77,6 @@ class _OrdersList extends ConsumerWidget {
   final AsyncValue<List<MarketplaceOrder>> ordersAsync;
   final String emptyTitle;
   final String emptyMessage;
-  final String secondaryMessage;
   final String counterpartyLabel;
   final String actionLabel;
   final String actionRoute;
@@ -81,7 +86,6 @@ class _OrdersList extends ConsumerWidget {
     required this.ordersAsync,
     required this.emptyTitle,
     required this.emptyMessage,
-    required this.secondaryMessage,
     required this.counterpartyLabel,
     required this.actionLabel,
     required this.actionRoute,
@@ -98,6 +102,7 @@ class _OrdersList extends ConsumerWidget {
             return ListView(
               padding: const EdgeInsets.all(24),
               children: [
+                const SizedBox(height: 40),
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
@@ -123,7 +128,10 @@ class _OrdersList extends ConsumerWidget {
                       const SizedBox(height: 16),
                       Text(
                         emptyTitle,
-                        style: Theme.of(context).textTheme.titleMedium,
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 8),
@@ -132,13 +140,7 @@ class _OrdersList extends ConsumerWidget {
                         style: Theme.of(context).textTheme.bodyMedium,
                         textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 10),
-                      Text(
-                        secondaryMessage,
-                        style: Theme.of(context).textTheme.bodySmall,
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 18),
                       ElevatedButton(
                         onPressed: () => context.go(actionRoute),
                         child: Text(actionLabel.toUpperCase()),
@@ -153,7 +155,7 @@ class _OrdersList extends ConsumerWidget {
           return ListView.separated(
             padding: const EdgeInsets.all(16),
             itemCount: orders.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 16),
+            separatorBuilder: (_, __) => const SizedBox(height: 14),
             itemBuilder: (context, index) {
               final order = orders[index];
               final product = order.item?.product;
@@ -164,8 +166,8 @@ class _OrdersList extends ConsumerWidget {
               final createdAtLabel = createdAt == null
                   ? 'Unknown date'
                   : '${createdAt.day}/${createdAt.month}/${createdAt.year}';
-              final statusLabel = order.status == 'pending'
-                  ? 'Awaiting meetup'
+              final statusLabel = order.isPending
+                  ? 'AWAITING PAYMENT'
                   : order.status.replaceAll('_', ' ').toUpperCase();
 
               return Container(
@@ -174,95 +176,98 @@ class _OrdersList extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: AppColors.border),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: SizedBox(
-                              height: 84,
-                              width: 84,
-                              child: imageUrl == null
-                                  ? Container(
-                                      color: AppColors.background,
-                                      child: const Icon(
-                                        Icons.image_not_supported_outlined,
-                                        color: AppColors.textSecondary,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: product != null
+                      ? () => context.push('/product/${product.id}')
+                      : null,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(14),
+                              child: SizedBox(
+                                height: 84,
+                                width: 84,
+                                child: imageUrl == null
+                                    ? Container(
+                                        color: AppColors.surfaceMuted,
+                                        child: const Icon(
+                                          Icons.image_not_supported_outlined,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                      )
+                                    : Image.network(
+                                        imageUrl,
+                                        fit: BoxFit.cover,
                                       ),
-                                    )
-                                  : Image.network(imageUrl, fit: BoxFit.cover),
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    product?.title ?? 'Order ${order.id}',
+                                    style: Theme.of(context).textTheme.titleMedium,
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    formatNaira(order.totalAmount),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(
+                                          color: AppColors.primary,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    '$counterpartyLabel: ${order.counterparty?.displayName ?? 'Unknown'}',
+                                    style: Theme.of(context).textTheme.bodySmall,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    createdAtLabel,
+                                    style: Theme.of(context).textTheme.bodySmall,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: order.isPending
+                                ? Colors.orange.shade50
+                                : AppColors.successSoft,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            statusLabel,
+                            style: TextStyle(
+                              color: order.isPending
+                                  ? Colors.orange.shade800
+                                  : AppColors.primaryDark,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12,
                             ),
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  product?.title ?? 'Order ${order.id}',
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.titleMedium,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  formatNaira(order.totalAmount),
-                                  style: Theme.of(context).textTheme.titleMedium
-                                      ?.copyWith(
-                                        color: AppColors.primary,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  '$counterpartyLabel: ${order.counterparty?.displayName ?? 'Unknown'}',
-                                  style: Theme.of(context).textTheme.bodyMedium,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Created: $createdAtLabel',
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  order.role == MarketplaceOrderRole.buyer
-                                      ? 'Pickup or delivery details can be coordinated after confirmation.'
-                                      : 'Keep the buyer updated so this sale feels reliable.',
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
                         ),
-                        decoration: BoxDecoration(
-                          color: order.status == 'pending'
-                              ? Colors.orange.shade50
-                              : Colors.green.shade50,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(
-                          statusLabel,
-                          style: TextStyle(
-                            color: order.status == 'pending'
-                                ? Colors.orange.shade800
-                                : Colors.green.shade800,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -273,7 +278,7 @@ class _OrdersList extends ConsumerWidget {
         error: (error, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
-            child: Text('Unable to load orders: $error'),
+            child: Text(ErrorMapper.toAppException(error).message),
           ),
         ),
       ),

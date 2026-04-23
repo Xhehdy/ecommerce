@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/colors.dart';
+import '../../../../core/errors/error_mapper.dart';
+import '../../../../core/ui/snackbars.dart';
 import '../../../auth/application/auth_provider.dart';
 import '../../application/marketplace_providers.dart';
 import '../../data/models/category_model.dart';
@@ -36,12 +38,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           return;
         }
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Unable to sync your profile: $error'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        AppSnackbars.showError(context, error);
       }
     });
   }
@@ -183,19 +180,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [AppColors.primaryDark, AppColors.primary],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(28),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.18),
-                        blurRadius: 24,
-                        offset: const Offset(0, 14),
-                      ),
-                    ],
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(24),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -525,7 +511,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: Center(
                   child: Padding(
                     padding: const EdgeInsets.all(24),
-                    child: Text('Error loading feed: $error'),
+                    child: Text(ErrorMapper.toAppException(error).message),
                   ),
                 ),
               ),

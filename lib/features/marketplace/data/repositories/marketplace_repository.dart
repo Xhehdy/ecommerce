@@ -129,6 +129,31 @@ class MarketplaceRepository {
         .eq('id', productId);
   }
 
+  Future<void> deleteProduct(String productId) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) {
+      throw StateError('User not authenticated');
+    }
+
+    // Remove images from Supabase Storage.
+    try {
+      final storageFiles = await _supabase.storage
+          .from('product-images')
+          .list(path: productId);
+      if (storageFiles.isNotEmpty) {
+        final paths = storageFiles
+            .map((file) => '$productId/${file.name}')
+            .toList(growable: false);
+        await _supabase.storage.from('product-images').remove(paths);
+      }
+    } catch (_) {
+      // Storage cleanup is best-effort; the DB row must still be removed.
+    }
+
+    // Cascade removes product_images via FK constraint.
+    await _supabase.from('products').delete().eq('id', productId);
+  }
+
   Future<String> createOrderForProduct(String productId) async {
     final user = _supabase.auth.currentUser;
     if (user == null) {
@@ -136,7 +161,7 @@ class MarketplaceRepository {
     }
 
     final response = await _supabase.rpc(
-      'create_marketplace_order',
+      'create_marketplace_order_pending',
       params: {'target_product_id': productId},
     );
 
@@ -145,6 +170,30 @@ class MarketplaceRepository {
     }
 
     return response;
+  }
+
+  Future<void> markOrderPaid(String orderId) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) {
+      throw StateError('User not authenticated');
+    }
+
+    await _supabase.rpc(
+      'mark_marketplace_order_paid',
+      params: {'target_order_id': orderId},
+    );
+  }
+
+  Future<void> cancelOrder(String orderId) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) {
+      throw StateError('User not authenticated');
+    }
+
+    await _supabase.rpc(
+      'cancel_marketplace_order',
+      params: {'target_order_id': orderId},
+    );
   }
 
   Future<List<MarketplaceOrder>> fetchOrders({
