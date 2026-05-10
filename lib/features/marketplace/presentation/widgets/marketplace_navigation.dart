@@ -24,45 +24,88 @@ class MarketplaceBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(
-          top: BorderSide(color: AppColors.border, width: 0.5),
+    return SafeArea(
+      top: false,
+      child: Container(
+        height: 72,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          border: Border(top: BorderSide(color: AppColors.border, width: 0.5)),
+        ),
+        child: Row(
+          children: [
+            for (final tab in MarketplaceTab.values)
+              Expanded(
+                child: _BottomNavItem(
+                  tab: tab,
+                  selected: tab == currentTab,
+                  onTap: () {
+                    if (tab == currentTab) return;
+                    context.go(tab.route);
+                  },
+                ),
+              ),
+          ],
         ),
       ),
-      child: NavigationBar(
-        selectedIndex: currentTab.index,
-        height: 72,
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        surfaceTintColor: Colors.transparent,
-        indicatorColor: AppColors.surfaceMuted,
-        indicatorShape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        onDestinationSelected: (index) {
-          final selectedTab = MarketplaceTab.values[index];
-          if (selectedTab == currentTab) return;
-          context.go(selectedTab.route);
-        },
-        destinations: [
-          for (final tab in MarketplaceTab.values)
-            NavigationDestination(
-              icon: Icon(
-                tab.icon,
-                color: AppColors.textSecondary,
-                size: 22,
+    );
+  }
+}
+
+class _BottomNavItem extends StatelessWidget {
+  final MarketplaceTab tab;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _BottomNavItem({
+    required this.tab,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 160),
+              height: 30,
+              width: 58,
+              decoration: BoxDecoration(
+                color: selected ? AppColors.surfaceMuted : Colors.transparent,
+                borderRadius: BorderRadius.circular(16),
               ),
-              selectedIcon: Icon(
-                tab.selectedIcon,
-                color: AppColors.primary,
-                size: 22,
+              alignment: Alignment.center,
+              child: Icon(
+                selected ? tab.selectedIcon : tab.icon,
+                color: selected ? AppColors.primary : AppColors.textSecondary,
+                size: 21,
               ),
-              label: tab.label,
             ),
-        ],
+            const SizedBox(height: 3),
+            Text(
+              tab.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: selected
+                    ? AppColors.textPrimary
+                    : AppColors.textSecondary,
+                fontSize: 11,
+                fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                letterSpacing: 0,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

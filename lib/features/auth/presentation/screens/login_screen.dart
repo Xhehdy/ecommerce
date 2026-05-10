@@ -54,8 +54,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       final password = _passwordController.text;
 
       await ref.read(authControllerProvider).signIn(email, password);
+      await ref.read(authControllerProvider).ensureCurrentUserProfile();
 
       if (mounted) {
+        ref.invalidate(currentUserProvider);
         ref.invalidate(profileProvider);
         context.go('/home');
       }
@@ -123,7 +125,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.w900,
-                        letterSpacing: 3.0,
+                        letterSpacing: 0,
                         color: AppColors.textPrimary,
                       ),
                       textAlign: TextAlign.center,
@@ -133,10 +135,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     // ── Form section ──
                     Text(
                       AppStrings.signIn,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleLarge
-                          ?.copyWith(fontWeight: FontWeight.w700),
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -172,6 +173,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         ),
                       ),
                       obscureText: _obscurePassword,
+                    ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: _isLoading
+                            ? null
+                            : () => context.push('/forgot-password'),
+                        child: const Text('Forgot password?'),
+                      ),
                     ),
                     const SizedBox(height: 32),
                     ElevatedButton(

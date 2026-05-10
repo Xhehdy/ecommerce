@@ -7,6 +7,9 @@ class Product {
   final double price;
   final String? condition;
   final String status;
+  final String? sku;
+  final int stockQuantity;
+  final bool allowMeetupPayment;
   final String? location;
   final DateTime? createdAt;
   final List<ProductImage> images;
@@ -20,6 +23,9 @@ class Product {
     required this.price,
     this.condition,
     required this.status,
+    this.sku,
+    this.stockQuantity = 1,
+    this.allowMeetupPayment = false,
     this.location,
     this.createdAt,
     this.images = const [],
@@ -44,12 +50,23 @@ class Product {
       price: (json['price'] as num).toDouble(),
       condition: json['condition'] as String?,
       status: json['status'] ?? 'available',
+      sku: json['sku'] as String?,
+      stockQuantity: json['stock_quantity'] as int? ?? 1,
+      allowMeetupPayment: json['allow_meetup_payment'] as bool? ?? false,
       location: json['location'] as String?,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
           : null,
       images: imagesList..sort((a, b) => a.sortOrder.compareTo(b.sortOrder)),
     );
+  }
+
+  bool get canOrder => status == 'available' && stockQuantity > 0;
+
+  String get stockLabel {
+    if (stockQuantity <= 0) return 'Out of stock';
+    if (stockQuantity == 1) return '1 left';
+    return '$stockQuantity in stock';
   }
 }
 

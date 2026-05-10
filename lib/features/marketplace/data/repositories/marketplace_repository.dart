@@ -11,6 +11,46 @@ final marketplaceRepositoryProvider = Provider<MarketplaceRepository>((ref) {
   return MarketplaceRepository(ref.watch(supabaseClientProvider));
 });
 
+class MarketplaceCheckoutItemRequest {
+  final String productId;
+  final int quantity;
+
+  const MarketplaceCheckoutItemRequest({
+    required this.productId,
+    required this.quantity,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {'product_id': productId, 'quantity': quantity};
+  }
+}
+
+class MarketplacePaymentBatch {
+  final String id;
+  final String reference;
+  final double totalAmount;
+  final List<String> orderIds;
+
+  const MarketplacePaymentBatch({
+    required this.id,
+    required this.reference,
+    required this.totalAmount,
+    required this.orderIds,
+  });
+
+  factory MarketplacePaymentBatch.fromJson(Map<dynamic, dynamic> json) {
+    final rawOrderIds = json['orderIds'];
+    return MarketplacePaymentBatch(
+      id: json['paymentBatchId'] as String,
+      reference: json['paymentReference'] as String,
+      totalAmount: (json['totalAmount'] as num).toDouble(),
+      orderIds: rawOrderIds is List
+          ? rawOrderIds.map((id) => id as String).toList(growable: false)
+          : const <String>[],
+    );
+  }
+}
+
 class MarketplaceRepository {
   final SupabaseClient _supabase;
 
@@ -29,6 +69,7 @@ class MarketplaceRepository {
         .from('products')
         .select('*, product_images(*)')
         .eq('status', 'available')
+        .gt('stock_quantity', 0)
         .order('created_at', ascending: false);
 
     return response.map((json) => Product.fromJson(json)).toList();
@@ -64,6 +105,10 @@ class MarketplaceRepository {
     String? description,
     int? categoryId,
     String? condition,
+    String? sku,
+    int stockQuantity = 1,
+    String? location,
+    bool allowMeetupPayment = false,
     List<File> images = const [],
   }) async {
     final user = _supabase.auth.currentUser;
@@ -78,7 +123,11 @@ class MarketplaceRepository {
           'description': description,
           'price': price,
           'condition': condition,
+          'sku': sku,
+          'stock_quantity': stockQuantity,
+          'location': location,
           'status': 'available',
+          'allow_meetup_payment': allowMeetupPayment,
         })
         .select()
         .single();
@@ -99,6 +148,10 @@ class MarketplaceRepository {
     String? description,
     int? categoryId,
     String? condition,
+    String? sku,
+    int? stockQuantity,
+    String? location,
+    bool? allowMeetupPayment,
     List<File> images = const [],
   }) async {
     await _supabase
@@ -109,6 +162,16 @@ class MarketplaceRepository {
           'description': description,
           'price': price,
           'condition': condition,
+          'sku': sku,
+          ...?switch (stockQuantity) {
+            final value? => {'stock_quantity': value},
+            _ => null,
+          },
+          'location': location,
+          ...?switch (allowMeetupPayment) {
+            final value? => {'allow_meetup_payment': value},
+            _ => null,
+          },
         })
         .eq('id', productId);
 
@@ -154,7 +217,11 @@ class MarketplaceRepository {
     await _supabase.from('products').delete().eq('id', productId);
   }
 
-  Future<String> createOrderForProduct(String productId) async {
+  Future<String> createOrderForProduct(
+    String productId, {
+    int quantity = 1,
+    String? meetupLocation,
+  }) async {
     final user = _supabase.auth.currentUser;
     if (user == null) {
       throw StateError('User not authenticated');
@@ -162,7 +229,12 @@ class MarketplaceRepository {
 
     final response = await _supabase.rpc(
       'create_marketplace_order_pending',
-      params: {'target_product_id': productId},
+      params: {
+        'target_product_id': productId,
+        'target_quantity': quantity,
+        if (meetupLocation?.trim().isNotEmpty == true)
+          'target_meetup_location': meetupLocation!.trim(),
+      },
     );
 
     if (response is! String || response.isEmpty) {
@@ -170,6 +242,62 @@ class MarketplaceRepository {
     }
 
     return response;
+  }
+
+  Future<String> createMeetupOrderForProduct(
+    String productId, {
+    int quantity = 1,
+    String? meetupLocation,
+  }) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) {
+      throw StateError('User not authenticated');
+    }
+
+    final response = await _supabase.rpc(
+      'create_marketplace_order_meetup',
+      params: {
+        'target_product_id': productId,
+        'target_quantity': quantity,
+        if (meetupLocation?.trim().isNotEmpty == true)
+          'target_meetup_location': meetupLocation!.trim(),
+      },
+    );
+
+    if (response is! String || response.isEmpty) {
+      throw StateError('Order creation did not return a valid order id.');
+    }
+
+    return response;
+  }
+
+  Future<MarketplacePaymentBatch> createPaystackPaymentBatch(
+    List<MarketplaceCheckoutItemRequest> items, {
+    String? meetupLocation,
+  }) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) {
+      throw StateError('User not authenticated');
+    }
+
+    if (items.isEmpty) {
+      throw ArgumentError('Select at least one item to checkout.');
+    }
+
+    final response = await _supabase.rpc(
+      'create_marketplace_payment_batch',
+      params: {
+        'target_items': items.map((item) => item.toJson()).toList(),
+        if (meetupLocation?.trim().isNotEmpty == true)
+          'target_meetup_location': meetupLocation!.trim(),
+      },
+    );
+
+    if (response is! Map) {
+      throw StateError('Payment batch creation did not return valid data.');
+    }
+
+    return MarketplacePaymentBatch.fromJson(response);
   }
 
   Future<void> markOrderPaid(String orderId) async {
@@ -184,6 +312,54 @@ class MarketplaceRepository {
     );
   }
 
+  Future<void> markPaymentBatchPaid(String paymentBatchId) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) {
+      throw StateError('User not authenticated');
+    }
+
+    await _supabase.rpc(
+      'mark_marketplace_payment_batch_paid',
+      params: {'target_payment_batch_id': paymentBatchId},
+    );
+  }
+
+  Future<void> markMeetupOrderPaid(String orderId) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) {
+      throw StateError('User not authenticated');
+    }
+
+    await _supabase.rpc(
+      'mark_marketplace_order_meetup_paid',
+      params: {'target_order_id': orderId},
+    );
+  }
+
+  Future<void> markOrderHandedOver(String orderId) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) {
+      throw StateError('User not authenticated');
+    }
+
+    await _supabase.rpc(
+      'mark_marketplace_order_handed_over',
+      params: {'target_order_id': orderId},
+    );
+  }
+
+  Future<void> markOrderReceived(String orderId) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) {
+      throw StateError('User not authenticated');
+    }
+
+    await _supabase.rpc(
+      'mark_marketplace_order_received',
+      params: {'target_order_id': orderId},
+    );
+  }
+
   Future<void> cancelOrder(String orderId) async {
     final user = _supabase.auth.currentUser;
     if (user == null) {
@@ -193,6 +369,84 @@ class MarketplaceRepository {
     await _supabase.rpc(
       'cancel_marketplace_order',
       params: {'target_order_id': orderId},
+    );
+  }
+
+  Future<void> cancelPaymentBatch(String paymentBatchId) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) {
+      throw StateError('User not authenticated');
+    }
+
+    await _supabase.rpc(
+      'cancel_marketplace_payment_batch',
+      params: {'target_payment_batch_id': paymentBatchId},
+    );
+  }
+
+  Future<MarketplaceOrder?> fetchOrderById(String orderId) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) {
+      throw StateError('User not authenticated');
+    }
+
+    final orderRow = await _supabase
+        .from('orders')
+        .select()
+        .eq('id', orderId)
+        .maybeSingle();
+
+    if (orderRow == null) {
+      return null;
+    }
+
+    final buyerId = orderRow['buyer_id'] as String;
+    final sellerId = orderRow['seller_id'] as String;
+    final role = switch (user.id) {
+      final id when id == buyerId => MarketplaceOrderRole.buyer,
+      final id when id == sellerId => MarketplaceOrderRole.seller,
+      _ => throw StateError('You do not have access to this order.'),
+    };
+    final counterpartyId = role == MarketplaceOrderRole.buyer
+        ? sellerId
+        : buyerId;
+
+    final orderItemRow = await _supabase
+        .from('order_items')
+        .select()
+        .eq('order_id', orderId)
+        .maybeSingle();
+
+    final productId = orderItemRow?['product_id'] as String?;
+    final product = productId == null
+        ? null
+        : Product.fromJson(
+            await _supabase
+                .from('products')
+                .select('*, product_images(*)')
+                .eq('id', productId)
+                .single(),
+          );
+
+    final counterpartyRow = await _supabase
+        .from('profiles')
+        .select('id, email, full_name')
+        .eq('id', counterpartyId)
+        .maybeSingle();
+
+    final counterparty = counterpartyRow == null
+        ? null
+        : OrderCounterparty.fromJson(counterpartyRow);
+
+    final item = orderItemRow == null
+        ? null
+        : MarketplaceOrderItem.fromJson(orderItemRow, product: product);
+
+    return MarketplaceOrder.fromJson(
+      orderRow,
+      role: role,
+      counterparty: counterparty,
+      item: item,
     );
   }
 
@@ -292,7 +546,7 @@ class MarketplaceRepository {
     var query = _supabase.from('products').select('*, product_images(*)');
 
     if (filters.availableOnly) {
-      query = query.eq('status', 'available');
+      query = query.eq('status', 'available').gt('stock_quantity', 0);
     }
 
     final normalizedQuery = _sanitizeSearchTerm(filters.query);
@@ -475,10 +729,7 @@ class MarketplaceRepository {
       return;
     }
 
-    await _supabase
-        .from('recent_searches')
-        .delete()
-        .eq('user_id', user.id);
+    await _supabase.from('recent_searches').delete().eq('user_id', user.id);
   }
 
   Future<void> _uploadProductImages(String productId, List<File> images) async {

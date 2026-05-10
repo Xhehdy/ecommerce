@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../auth/application/auth_provider.dart';
 import '../data/models/product_model.dart';
 import '../data/models/category_model.dart';
 import '../data/models/order_model.dart';
@@ -16,6 +17,7 @@ final homeFeedProvider = FutureProvider<List<Product>>((ref) {
 });
 
 final myListingsProvider = FutureProvider<List<Product>>((ref) {
+  ref.watch(authStateProvider);
   final repo = ref.watch(marketplaceRepositoryProvider);
   return repo.fetchMyProducts();
 });
@@ -29,28 +31,42 @@ final productDetailsProvider = FutureProvider.family<Product, String>((
 });
 
 final favoriteProductIdsProvider = FutureProvider<Set<String>>((ref) {
+  ref.watch(authStateProvider);
   final repo = ref.watch(marketplaceRepositoryProvider);
   return repo.fetchFavoriteProductIds();
 });
 
 final favoriteProductsProvider = FutureProvider<List<Product>>((ref) {
+  ref.watch(authStateProvider);
   final repo = ref.watch(marketplaceRepositoryProvider);
   return repo.fetchFavoriteProducts();
 });
 
 final recentSearchesProvider = FutureProvider<List<RecentSearch>>((ref) {
+  ref.watch(authStateProvider);
   final repo = ref.watch(marketplaceRepositoryProvider);
   return repo.fetchRecentSearches();
 });
 
 final purchaseOrdersProvider = FutureProvider<List<MarketplaceOrder>>((ref) {
+  ref.watch(authStateProvider);
   final repo = ref.watch(marketplaceRepositoryProvider);
   return repo.fetchOrders(role: MarketplaceOrderRole.buyer);
 });
 
 final salesOrdersProvider = FutureProvider<List<MarketplaceOrder>>((ref) {
+  ref.watch(authStateProvider);
   final repo = ref.watch(marketplaceRepositoryProvider);
   return repo.fetchOrders(role: MarketplaceOrderRole.seller);
+});
+
+final orderDetailsProvider = FutureProvider.family<MarketplaceOrder?, String>((
+  ref,
+  orderId,
+) {
+  ref.watch(authStateProvider);
+  final repo = ref.watch(marketplaceRepositoryProvider);
+  return repo.fetchOrderById(orderId);
 });
 
 final searchResultsProvider =

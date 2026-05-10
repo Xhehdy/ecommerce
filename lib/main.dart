@@ -8,9 +8,9 @@ import 'app/router.dart';
 import 'app/theme/colors.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
   await bootstrap(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+
     final config = AppConfig.fromEnvironment();
     await Supabase.initialize(
       url: config.supabaseUrl,
@@ -34,6 +34,7 @@ class MyApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(
+      debugShowCheckedModeBanner: false,
       title: 'ATELIER Marketplace',
       theme: AppTheme.lightTheme,
       routerConfig: router,

@@ -19,7 +19,8 @@ class MyListingsScreen extends ConsumerWidget {
     WidgetRef ref,
     Product product,
   ) async {
-    final nextStatus = (product.status == 'sold' || product.status == 'reserved')
+    final nextStatus =
+        (product.status == 'sold' || product.status == 'reserved')
         ? 'available'
         : 'sold';
 
@@ -68,9 +69,7 @@ class MyListingsScreen extends ConsumerWidget {
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             child: const Text(AppStrings.deleteListing),
           ),
         ],
@@ -160,14 +159,19 @@ class MyListingsScreen extends ConsumerWidget {
               );
             }
 
-            final liveListings = products.where((p) => p.status != 'sold').length;
+            final liveListings = products
+                .where((p) => p.status != 'sold')
+                .length;
             final soldListings = products.length - liveListings;
-            final portfolioValue = products.fold<double>(0, (t, p) => t + p.price);
+            final portfolioValue = products.fold<double>(
+              0,
+              (t, p) => t + p.price,
+            );
 
             return ListView.separated(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
               itemCount: products.length + 1,
-              separatorBuilder: (_, __) => const SizedBox(height: 14),
+              separatorBuilder: (_, _) => const SizedBox(height: 14),
               itemBuilder: (context, index) {
                 if (index == 0) {
                   return Container(
@@ -208,7 +212,7 @@ class MyListingsScreen extends ConsumerWidget {
                   ),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(20),
-                    onTap: () => context.push('/product/${product.id}'),
+                    onTap: () => context.go('/product/${product.id}'),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -242,7 +246,9 @@ class MyListingsScreen extends ConsumerWidget {
                                   children: [
                                     Text(
                                       product.title,
-                                      style: Theme.of(context).textTheme.titleMedium,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleMedium,
                                     ),
                                     const SizedBox(height: 6),
                                     Text(
@@ -265,7 +271,9 @@ class MyListingsScreen extends ConsumerWidget {
                                         color: isSold
                                             ? Colors.orange.shade50
                                             : AppColors.successSoft,
-                                        borderRadius: BorderRadius.circular(999),
+                                        borderRadius: BorderRadius.circular(
+                                          999,
+                                        ),
                                       ),
                                       child: Text(
                                         isSold ? 'Sold' : 'Available',
@@ -293,10 +301,15 @@ class MyListingsScreen extends ConsumerWidget {
                                 child: IconButton.outlined(
                                   onPressed: () =>
                                       _deleteProduct(context, ref, product),
-                                  icon: const Icon(Icons.delete_outline, size: 18),
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    size: 18,
+                                  ),
                                   style: IconButton.styleFrom(
                                     foregroundColor: AppColors.error,
-                                    side: const BorderSide(color: AppColors.border),
+                                    side: const BorderSide(
+                                      color: AppColors.border,
+                                    ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
@@ -369,9 +382,9 @@ class _StatChip extends StatelessWidget {
           Text(
             value,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: AppColors.primaryDark,
-                  fontWeight: FontWeight.w800,
-                ),
+              color: AppColors.primaryDark,
+              fontWeight: FontWeight.w800,
+            ),
           ),
           const SizedBox(height: 2),
           Text(label, style: Theme.of(context).textTheme.bodySmall),

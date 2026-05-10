@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../app/theme/colors.dart';
+import '../../../../core/constants/app_strings.dart';
 import '../../../../core/ui/network_image.dart';
 import '../../../../core/ui/snackbars.dart';
 import '../../application/marketplace_providers.dart';
@@ -24,10 +25,14 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _priceController = TextEditingController();
+  final _skuController = TextEditingController();
+  final _stockController = TextEditingController(text: '1');
   final _descriptionController = TextEditingController();
+  final _locationController = TextEditingController();
 
   int? _selectedCategoryId;
   String? _selectedCondition;
+  bool _allowMeetupPayment = false;
 
   final List<File> _newImages = [];
   List<ProductImage> _existingImages = [];
@@ -36,11 +41,22 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
 
   final _picker = ImagePicker();
 
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _priceController.dispose();
+    _skuController.dispose();
+    _stockController.dispose();
+    _descriptionController.dispose();
+    _locationController.dispose();
+    super.dispose();
+  }
+
   Future<void> _pickImage() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
+    final pickedFiles = await _picker.pickMultiImage();
+    if (pickedFiles.isNotEmpty) {
       setState(() {
-        _newImages.add(File(pickedFile.path));
+        _newImages.addAll(pickedFiles.map((f) => File(f.path)));
       });
     }
   }
@@ -52,9 +68,13 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
 
     _titleController.text = product.title;
     _priceController.text = product.price.toStringAsFixed(2);
+    _skuController.text = product.sku ?? '';
+    _stockController.text = product.stockQuantity.toString();
     _descriptionController.text = product.description ?? '';
+    _locationController.text = product.location ?? '';
     _selectedCategoryId = product.categoryId;
     _selectedCondition = product.condition;
+    _allowMeetupPayment = product.allowMeetupPayment;
     _existingImages = product.images;
     _hasSeededForm = true;
   }
@@ -75,13 +95,25 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
       final title = _titleController.text.trim();
       final description = _descriptionController.text.trim();
       final normalizedDescription = description.isEmpty ? null : description;
+      final location = _locationController.text.trim();
+      final normalizedLocation = location.isEmpty ? null : location;
       final priceText = _priceController.text.trim();
       final price = double.tryParse(priceText);
       if (price == null) {
         if (mounted) {
+          AppSnackbars.showError(context, StateError('Invalid price'));
+        }
+        return;
+      }
+      final sku = _skuController.text.trim();
+      final normalizedSku = sku.isEmpty ? null : sku;
+      final stockText = _stockController.text.trim();
+      final stockQuantity = int.tryParse(stockText);
+      if (stockQuantity == null || stockQuantity < 1) {
+        if (mounted) {
           AppSnackbars.showError(
             context,
-            StateError('Invalid price'),
+            StateError('Stock count must be at least 1'),
           );
         }
         return;
@@ -94,6 +126,10 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
           description: normalizedDescription,
           categoryId: _selectedCategoryId,
           condition: _selectedCondition,
+          sku: normalizedSku,
+          stockQuantity: stockQuantity,
+          location: normalizedLocation,
+          allowMeetupPayment: _allowMeetupPayment,
           images: _newImages,
         );
       } else {
@@ -104,6 +140,10 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
           description: normalizedDescription,
           categoryId: _selectedCategoryId,
           condition: _selectedCondition,
+          sku: normalizedSku,
+          stockQuantity: stockQuantity,
+          location: normalizedLocation,
+          allowMeetupPayment: _allowMeetupPayment,
           images: _newImages,
         );
         ref.invalidate(productDetailsProvider(widget.productId!));
@@ -114,13 +154,19 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
       ref.invalidate(myListingsProvider);
 
       if (mounted) {
-        context.pop();
         AppSnackbars.showSuccess(
           context,
           widget.productId == null
               ? 'Listing created successfully!'
               : 'Listing updated successfully!',
         );
+        if (widget.productId == null) {
+          context.go('/my-listings');
+        } else if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/my-listings');
+        }
       }
     } catch (e) {
       if (mounted) AppSnackbars.showError(context, e);
@@ -275,7 +321,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                                   ),
                                   SizedBox(height: 8),
                                   Text(
-                                    'Add Photo',
+                                    'Add Photos',
                                     style: TextStyle(
                                       color: AppColors.textSecondary,
                                       fontWeight: FontWeight.w600,
@@ -313,6 +359,41 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                   if (double.tryParse(val) == null) return 'Invalid number';
                   return null;
                 },
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _skuController,
+                      decoration: const InputDecoration(
+                        labelText: 'SKU or item code',
+                        hintText: 'e.g. LAMP-BLK-01',
+                        prefixIcon: Icon(Icons.qr_code_2_outlined),
+                      ),
+                      textCapitalization: TextCapitalization.characters,
+                      textInputAction: TextInputAction.next,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  SizedBox(
+                    width: 132,
+                    child: TextFormField(
+                      controller: _stockController,
+                      decoration: const InputDecoration(
+                        labelText: 'Stock',
+                        prefixIcon: Icon(Icons.inventory_2_outlined),
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (val) {
+                        final quantity = int.tryParse(val?.trim() ?? '');
+                        if (quantity == null) return 'Required';
+                        if (quantity < 1) return 'Min 1';
+                        return null;
+                      },
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               categoriesAsync.when(
@@ -358,11 +439,38 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
               DropdownButtonFormField<String>(
                 decoration: const InputDecoration(labelText: 'Condition'),
                 initialValue: _selectedCondition,
-                items: ['New', 'Like New', 'Good', 'Fair', 'Poor'].map((c) {
+                items: AppStrings.productConditions.map((c) {
                   return DropdownMenuItem(value: c, child: Text(c));
                 }).toList(),
                 onChanged: (val) => setState(() => _selectedCondition = val),
                 validator: (val) => val == null ? 'Required' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _locationController,
+                decoration: const InputDecoration(
+                  labelText: 'Pickup location',
+                  hintText: 'e.g. Main gate, library, hostel lobby',
+                  prefixIcon: Icon(Icons.place_outlined),
+                ),
+                textInputAction: TextInputAction.next,
+              ),
+              const SizedBox(height: 16),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: SwitchListTile.adaptive(
+                  value: _allowMeetupPayment,
+                  title: const Text('Allow pay on meetup'),
+                  subtitle: const Text(
+                    'Buyers can reserve now and pay in person during pickup.',
+                  ),
+                  onChanged: (value) =>
+                      setState(() => _allowMeetupPayment = value),
+                ),
               ),
               const SizedBox(height: 16),
               TextFormField(

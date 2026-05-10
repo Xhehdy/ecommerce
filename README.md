@@ -20,11 +20,16 @@ ATELIER Marketplace is a Flutter + Supabase campus marketplace. Students can cre
 
 ### 2. Set up Supabase
 
-1. Go to your Supabase dashboard → **SQL Editor**
-2. Paste the contents of `supabase/schema.sql` and run it
-   - **The schema is idempotent** — safe to run multiple times without errors
-   - It creates all tables, RLS policies, functions, triggers, and storage buckets
-3. Categories are auto-seeded (Electronics, Fashion, Books, etc.)
+Run migrations with dbmate:
+
+```bash
+export DATABASE_URL='postgresql://postgres.YOUR_PROJECT_REF:YOUR_DB_PASSWORD@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?sslmode=require'
+./dbmate-safe.sh up
+```
+
+- `db/migrations/` is the dbmate migration stream.
+- `supabase/schema.sql` remains the idempotent install-from-scratch snapshot.
+- Categories are auto-seeded (Electronics, Fashion, Books, etc.).
 
 ### 3. Deploy Edge Functions (for payments)
 
@@ -55,6 +60,7 @@ Then edit `.env` with your actual values:
 SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 SUPABASE_ANON_KEY=eyJ...your-anon-key...
 PAYSTACK_PUBLIC_KEY=pk_test_...your-paystack-public-key...
+AUTH_REDIRECT_URL=http://localhost:3000/reset-password
 ```
 
 You can find these in your Supabase dashboard under **Settings → API**.
@@ -97,9 +103,9 @@ flutter run -d <device-id> --dart-define-from-file=.env
 ### 7. Build for release (optional)
 
 ```bash
-flutter build apk --dart-define-from-file=.env       # Android
-flutter build ios --dart-define-from-file=.env        # iOS
-flutter build web --dart-define-from-file=.env        # Web
+flutter build apk --release --split-per-abi --obfuscate --split-debug-info=build/symbols --dart-define-from-file=.env       # Android
+flutter build ios --release --obfuscate --split-debug-info=build/symbols --dart-define-from-file=.env        # iOS
+flutter build web --release --dart-define-from-file=.env        # Web
 ```
 
 ## App Routes
@@ -130,7 +136,9 @@ lib/
     marketplace/    # Home, products, orders, favorites, search
     search/         # Search feature barrel (re-exports from marketplace)
 supabase/
-  schema.sql        # Idempotent database schema
+  schema.sql        # Idempotent install-from-scratch database schema
+db/
+  migrations/       # dbmate migration stream
   functions/
     paystack-initialize/
     paystack-verify/

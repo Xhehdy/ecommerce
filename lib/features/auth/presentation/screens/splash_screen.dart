@@ -50,24 +50,20 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
 
-    _subtitleSlide = Tween<Offset>(
-      begin: const Offset(0, 0.2),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.4, 0.7, curve: Curves.easeOut),
-      ),
-    );
+    _subtitleSlide =
+        Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _controller,
+            curve: const Interval(0.4, 0.7, curve: Curves.easeOut),
+          ),
+        );
 
     _controller.forward();
     _navigate();
   }
 
   Future<void> _navigate() async {
-    await Future.delayed(
-      AppDurations.splash + AppDurations.splashHold,
-    );
+    await Future.delayed(AppDurations.splash + AppDurations.splashHold);
 
     if (!mounted) return;
 
@@ -133,7 +129,7 @@ class _SplashScreenState extends State<SplashScreen>
                       style: TextStyle(
                         fontSize: 38,
                         fontWeight: FontWeight.w900,
-                        letterSpacing: 4,
+                        letterSpacing: 0,
                         color: Colors.white,
                       ),
                     ),
@@ -153,7 +149,7 @@ class _SplashScreenState extends State<SplashScreen>
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
                         color: Colors.white.withValues(alpha: 0.7),
-                        letterSpacing: 1.2,
+                        letterSpacing: 0,
                       ),
                     ),
                   ),

@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/colors.dart';
 import '../../../../core/errors/error_mapper.dart';
+import '../../../../core/ui/network_image.dart';
+import '../../../../core/ui/snackbars.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../application/marketplace_providers.dart';
 import '../../data/models/category_model.dart';
@@ -86,7 +88,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     if (lower.contains('electronic')) return Icons.computer_outlined;
     if (lower.contains('fashion')) return Icons.checkroom_outlined;
     if (lower.contains('beauty')) return Icons.face_retouching_natural;
-    if (lower.contains('home') || lower.contains('hostel')) return Icons.chair_outlined;
+    if (lower.contains('home') || lower.contains('hostel')) {
+      return Icons.chair_outlined;
+    }
     if (lower.contains('sport')) return Icons.sports_basketball_outlined;
     return Icons.category_outlined;
   }
@@ -95,7 +99,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   Widget build(BuildContext context) {
     final categoriesAsync = ref.watch(categoriesProvider);
     final recentSearchesAsync = ref.watch(recentSearchesProvider);
-    final suggestedAsync = ref.watch(homeFeedProvider); // Using home feed for suggested
+    final suggestedAsync = ref.watch(
+      homeFeedProvider,
+    ); // Using home feed for suggested
     final categories = categoriesAsync.asData?.value ?? const <Category>[];
 
     final searchResultsAsync = _hasSubmittedSearch
@@ -104,7 +110,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Search', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text(
+          'Search',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
         centerTitle: false,
       ),
       bottomNavigationBar: const MarketplaceBottomNavBar(
@@ -121,7 +130,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               onSubmitted: (_) => _applyCurrentQuery(),
               decoration: InputDecoration(
                 hintText: 'Search for anything...',
-                prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
+                prefixIcon: const Icon(
+                  Icons.search,
+                  color: AppColors.textSecondary,
+                ),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.tune, color: AppColors.textSecondary),
                   onPressed: () => _openFilters(categories),
@@ -145,7 +157,16 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         padding: const EdgeInsets.only(right: 8),
                         child: Chip(
                           label: Text(
-                            categories.firstWhere((c) => c.id == _filters.categoryId, orElse: () => const Category(id: 0, slug: '', name: 'Category')).displayName,
+                            categories
+                                .firstWhere(
+                                  (c) => c.id == _filters.categoryId,
+                                  orElse: () => const Category(
+                                    id: 0,
+                                    slug: '',
+                                    name: 'Category',
+                                  ),
+                                )
+                                .displayName,
                           ),
                           onDeleted: () {
                             _runSearch(_filters.copyWith(categoryId: null));
@@ -158,7 +179,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         child: Chip(
                           label: Text('Price filtered'),
                           onDeleted: () {
-                            _runSearch(_filters.copyWith(minPrice: null, maxPrice: null));
+                            _runSearch(
+                              _filters.copyWith(minPrice: null, maxPrice: null),
+                            );
                           },
                         ),
                       ),
@@ -185,7 +208,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       // ── Recent Searches ──
                       recentSearchesAsync.when(
                         data: (recentSearches) {
-                          if (recentSearches.isEmpty) return const SliverToBoxAdapter();
+                          if (recentSearches.isEmpty) {
+                            return const SliverToBoxAdapter();
+                          }
                           return SliverToBoxAdapter(
                             child: Padding(
                               padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -193,13 +218,28 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text('Recent searches', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                                      Text(
+                                        'Recent searches',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      ),
                                       TextButton(
                                         onPressed: () async {
-                                          await ref.read(marketplaceRepositoryProvider).clearRecentSearches();
-                                          ref.invalidate(recentSearchesProvider);
+                                          await ref
+                                              .read(
+                                                marketplaceRepositoryProvider,
+                                              )
+                                              .clearRecentSearches();
+                                          ref.invalidate(
+                                            recentSearchesProvider,
+                                          );
                                         },
                                         style: TextButton.styleFrom(
                                           foregroundColor: AppColors.primary,
@@ -216,11 +256,21 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                     runSpacing: 8,
                                     children: recentSearches.map((rs) {
                                       return ActionChip(
-                                        label: Text(rs.query.isEmpty ? 'Filtered' : rs.query),
+                                        label: Text(
+                                          rs.query.isEmpty
+                                              ? 'Filtered'
+                                              : rs.query,
+                                        ),
                                         onPressed: () => _applyRecentSearch(rs),
                                         backgroundColor: AppColors.surface,
-                                        side: const BorderSide(color: AppColors.border),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                                        side: const BorderSide(
+                                          color: AppColors.border,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            999,
+                                          ),
+                                        ),
                                       );
                                     }).toList(),
                                   ),
@@ -230,7 +280,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           );
                         },
                         loading: () => const SliverToBoxAdapter(),
-                        error: (_, __) => const SliverToBoxAdapter(),
+                        error: (_, _) => const SliverToBoxAdapter(),
                       ),
 
                       // ── Popular Categories ──
@@ -241,36 +291,61 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Popular categories', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                                Text(
+                                  'Popular categories',
+                                  style: Theme.of(context).textTheme.titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.w700),
+                                ),
                                 const SizedBox(height: 16),
                                 GridView.builder(
                                   shrinkWrap: true,
                                   physics: const NeverScrollableScrollPhysics(),
-                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
-                                    crossAxisSpacing: 8,
-                                    mainAxisSpacing: 8,
-                                    mainAxisExtent: 42,
-                                  ),
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 2,
+                                        crossAxisSpacing: 8,
+                                        mainAxisSpacing: 8,
+                                        mainAxisExtent: 42,
+                                      ),
                                   itemCount: categories.length,
                                   itemBuilder: (context, index) {
                                     final cat = categories[index];
                                     return OutlinedButton.icon(
                                       onPressed: () {
-                                        _runSearch(ProductSearchFilters(categoryId: cat.id));
+                                        _runSearch(
+                                          ProductSearchFilters(
+                                            categoryId: cat.id,
+                                          ),
+                                        );
                                       },
-                                      icon: Icon(_iconForCategory(cat.displayName), size: 18, color: AppColors.textSecondary),
+                                      icon: Icon(
+                                        _iconForCategory(cat.displayName),
+                                        size: 18,
+                                        color: AppColors.textSecondary,
+                                      ),
                                       label: Text(
                                         cat.displayName,
-                                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600),
+                                        style: const TextStyle(
+                                          color: AppColors.textPrimary,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                       style: OutlinedButton.styleFrom(
-                                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                        ),
                                         alignment: Alignment.centerLeft,
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                        side: const BorderSide(color: AppColors.border),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                        side: const BorderSide(
+                                          color: AppColors.border,
+                                        ),
                                         backgroundColor: AppColors.surface,
                                       ),
                                     );
@@ -285,12 +360,24 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       SliverToBoxAdapter(
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                          child: Text('Suggested for you', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                          child: Text(
+                            'Suggested for you',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
                         ),
                       ),
                       suggestedAsync.when(
                         data: (products) {
-                          if (products.isEmpty) return const SliverToBoxAdapter();
+                          if (products.isEmpty) {
+                            if (categories.isEmpty) {
+                              return const SliverFillRemaining(
+                                hasScrollBody: false,
+                                child: _SearchDiscoveryEmptyState(),
+                              );
+                            }
+                            return const SliverToBoxAdapter();
+                          }
                           // Show a list view of products (horizontal tile layout)
                           return SliverList(
                             delegate: SliverChildBuilderDelegate(
@@ -298,12 +385,16 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                 final product = products[index];
                                 return _SuggestedProductTile(product: product);
                               },
-                              childCount: products.take(5).length, // Just show top 5 suggested
+                              childCount: products
+                                  .take(5)
+                                  .length, // Just show top 5 suggested
                             ),
                           );
                         },
-                        loading: () => const SliverFillRemaining(child: Center(child: CircularProgressIndicator())),
-                        error: (_, __) => const SliverToBoxAdapter(),
+                        loading: () => const SliverFillRemaining(
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
+                        error: (_, _) => const SliverToBoxAdapter(),
                       ),
                     ],
                   )
@@ -314,11 +405,24 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.search_off_outlined, size: 64, color: AppColors.border),
+                              const Icon(
+                                Icons.search_off_outlined,
+                                size: 64,
+                                color: AppColors.border,
+                              ),
                               const SizedBox(height: 16),
-                              Text('No results found', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                              Text(
+                                'No results found',
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.w700),
+                              ),
                               const SizedBox(height: 8),
-                              const Text('Try adjusting your search or filters.', style: TextStyle(color: AppColors.textSecondary)),
+                              const Text(
+                                'Try adjusting your search or filters.',
+                                style: TextStyle(
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
                             ],
                           ),
                         );
@@ -326,20 +430,24 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
                       return GridView.builder(
                         padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),
-                        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 240,
-                          mainAxisExtent: 245,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 16,
-                        ),
+                        gridDelegate:
+                            const SliverGridDelegateWithMaxCrossAxisExtent(
+                              maxCrossAxisExtent: 240,
+                              mainAxisExtent: 245,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 16,
+                            ),
                         itemCount: products.length,
                         itemBuilder: (context, index) {
                           return ProductCard(product: products[index]);
                         },
                       );
                     },
-                    loading: () => const Center(child: CircularProgressIndicator()),
-                    error: (error, _) => Center(child: Text(ErrorMapper.toAppException(error).message)),
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (error, _) => Center(
+                      child: Text(ErrorMapper.toAppException(error).message),
+                    ),
                   ),
           ),
         ],
@@ -348,15 +456,99 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 }
 
-class _SuggestedProductTile extends StatelessWidget {
+class _SearchDiscoveryEmptyState extends StatelessWidget {
+  const _SearchDiscoveryEmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                height: 72,
+                width: 72,
+                decoration: const BoxDecoration(
+                  color: AppColors.surfaceMuted,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.travel_explore_outlined,
+                  size: 34,
+                  color: AppColors.primaryDark,
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'Nothing to explore yet',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Try a keyword search, browse the latest listings, or clear filters to discover campus deals.',
+                style: Theme.of(context).textTheme.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 18),
+              FilledButton.icon(
+                onPressed: () => context.go('/home'),
+                icon: const Icon(Icons.grid_view_rounded),
+                label: const Text('Browse latest listings'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SuggestedProductTile extends ConsumerWidget {
   final Product product;
 
   const _SuggestedProductTile({required this.product});
 
+  Future<void> _toggleFavorite(
+    BuildContext context,
+    WidgetRef ref,
+    bool isFavorite,
+  ) async {
+    try {
+      await ref.read(marketplaceRepositoryProvider).toggleFavorite(product.id);
+      ref.invalidate(favoriteProductIdsProvider);
+      ref.invalidate(favoriteProductsProvider);
+
+      if (!context.mounted) return;
+      AppSnackbars.showSuccess(
+        context,
+        isFavorite ? 'Removed from favorites.' : 'Added to favorites.',
+      );
+    } catch (error) {
+      if (!context.mounted) return;
+      AppSnackbars.showError(context, error);
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final favoriteIdsAsync = ref.watch(favoriteProductIdsProvider);
+    final isFavorite =
+        favoriteIdsAsync.asData?.value.contains(product.id) ?? false;
+
     return InkWell(
-      onTap: () => context.push('/product/${product.id}'),
+      onTap: () => context.go('/product/${product.id}'),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Row(
@@ -367,16 +559,11 @@ class _SuggestedProductTile extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColors.surfaceMuted,
                 borderRadius: BorderRadius.circular(12),
-                image: product.images.isNotEmpty
-                    ? DecorationImage(
-                        image: NetworkImage(product.images.first.imageUrl),
-                        fit: BoxFit.cover,
-                      )
-                    : null,
               ),
-              child: product.images.isEmpty
-                  ? const Icon(Icons.image_outlined, color: AppColors.border)
-                  : null,
+              clipBehavior: Clip.antiAlias,
+              child: product.images.isNotEmpty
+                  ? AppNetworkImage(url: product.images.first.imageUrl)
+                  : const Icon(Icons.image_outlined, color: AppColors.border),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -385,28 +572,44 @@ class _SuggestedProductTile extends StatelessWidget {
                 children: [
                   Text(
                     product.title,
-                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Text(
                     formatNaira(product.price),
-                    style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 13),
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     product.location ?? 'Main Campus',
-                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.favorite_border_rounded, color: AppColors.textSecondary),
-              onPressed: () {
-                // TODO: toggle favorite
-              },
+              tooltip: isFavorite ? 'Remove from saved' : 'Save item',
+              icon: Icon(
+                isFavorite
+                    ? Icons.favorite_rounded
+                    : Icons.favorite_border_rounded,
+                color: isFavorite ? Colors.pink : AppColors.textSecondary,
+              ),
+              onPressed: favoriteIdsAsync.isLoading
+                  ? null
+                  : () => _toggleFavorite(context, ref, isFavorite),
             ),
           ],
         ),
@@ -436,6 +639,7 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
   int? _selectedCategoryId;
   ProductSortOption _selectedSortOption = ProductSortOption.newest;
   bool _availableOnly = true;
+  String? _priceError;
 
   @override
   void initState() {
@@ -463,21 +667,40 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
       _selectedCategoryId = null;
       _selectedSortOption = ProductSortOption.newest;
       _availableOnly = true;
+      _priceError = null;
       _minPriceController.clear();
       _maxPriceController.clear();
     });
   }
 
+  double? _priceValue(TextEditingController controller) {
+    final text = controller.text.trim();
+    if (text.isEmpty) return null;
+    return double.tryParse(text);
+  }
+
   void _apply() {
+    final minPrice = _priceValue(_minPriceController);
+    final maxPrice = _priceValue(_maxPriceController);
+    final hasInvalidPrice =
+        (_minPriceController.text.trim().isNotEmpty && minPrice == null) ||
+        (_maxPriceController.text.trim().isNotEmpty && maxPrice == null);
+
+    if (hasInvalidPrice) {
+      setState(() => _priceError = 'Enter a valid price.');
+      return;
+    }
+
+    if (minPrice != null && maxPrice != null && minPrice > maxPrice) {
+      setState(() => _priceError = 'Minimum price cannot exceed maximum.');
+      return;
+    }
+
     Navigator.of(context).pop(
       widget.initialFilters.copyWith(
         categoryId: _selectedCategoryId,
-        minPrice: _minPriceController.text.trim().isEmpty
-            ? null
-            : double.tryParse(_minPriceController.text.trim()),
-        maxPrice: _maxPriceController.text.trim().isEmpty
-            ? null
-            : double.tryParse(_maxPriceController.text.trim()),
+        minPrice: minPrice,
+        maxPrice: maxPrice,
         sortOption: _selectedSortOption,
         availableOnly: _availableOnly,
       ),
@@ -525,7 +748,7 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
                     ),
                     decoration: const InputDecoration(
                       labelText: 'Min Price (₦)',
-                    ),
+                    ).copyWith(errorText: _priceError),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -537,7 +760,7 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
                     ),
                     decoration: const InputDecoration(
                       labelText: 'Max Price (₦)',
-                    ),
+                    ).copyWith(errorText: _priceError),
                   ),
                 ),
               ],

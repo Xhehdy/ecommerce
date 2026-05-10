@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/colors.dart';
+import '../../../../core/ui/network_image.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../data/models/product_model.dart';
 
@@ -27,9 +28,10 @@ class _ProductCardState extends State<ProductCard>
       duration: const Duration(milliseconds: 100),
       reverseDuration: const Duration(milliseconds: 180),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.97).animate(
-      CurvedAnimation(parent: _tapController, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.97,
+    ).animate(CurvedAnimation(parent: _tapController, curve: Curves.easeInOut));
   }
 
   @override
@@ -41,11 +43,21 @@ class _ProductCardState extends State<ProductCard>
   @override
   Widget build(BuildContext context) {
     final product = widget.product;
-    final isSold = product.status == 'sold';
+    final statusLabel = product.canOrder
+        ? _statusLabel(product.status)
+        : 'Out of stock';
+    final statusBackground = product.canOrder
+        ? _statusBackground(product.status)
+        : AppColors.warningSoft;
+    final statusForeground = product.canOrder
+        ? _statusForeground(product.status)
+        : Colors.orange.shade900;
     final conditionText = product.condition?.trim();
     final locationText = product.location?.trim();
+    final skuText = product.sku?.trim();
     final metaText = [
       if (conditionText != null && conditionText.isNotEmpty) conditionText,
+      if (skuText != null && skuText.isNotEmpty) skuText,
       if (locationText != null && locationText.isNotEmpty)
         'Pickup at $locationText'
       else
@@ -55,16 +67,13 @@ class _ProductCardState extends State<ProductCard>
     return AnimatedBuilder(
       animation: _scaleAnimation,
       builder: (context, child) {
-        return Transform.scale(
-          scale: _scaleAnimation.value,
-          child: child,
-        );
+        return Transform.scale(scale: _scaleAnimation.value, child: child);
       },
       child: GestureDetector(
         onTapDown: (_) => _tapController.forward(),
         onTapUp: (_) {
           _tapController.reverse();
-          context.push('/product/${product.id}');
+          context.go('/product/${product.id}');
         },
         onTapCancel: () => _tapController.reverse(),
         child: Container(
@@ -85,10 +94,7 @@ class _ProductCardState extends State<ProductCard>
                     Container(
                       color: AppColors.surfaceMuted,
                       child: product.images.isNotEmpty
-                          ? Image.network(
-                              product.images.first.imageUrl,
-                              fit: BoxFit.cover,
-                            )
+                          ? AppNetworkImage(url: product.images.first.imageUrl)
                           : const Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -119,17 +125,13 @@ class _ProductCardState extends State<ProductCard>
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: isSold
-                              ? AppColors.warningSoft
-                              : AppColors.successSoft,
+                          color: statusBackground,
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
-                          isSold ? 'Sold' : 'Available',
+                          statusLabel,
                           style: TextStyle(
-                            color: isSold
-                                ? Colors.orange.shade900
-                                : AppColors.primaryDark,
+                            color: statusForeground,
                             fontWeight: FontWeight.w700,
                             fontSize: 10,
                           ),
@@ -150,16 +152,18 @@ class _ProductCardState extends State<ProductCard>
                       product.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(fontSize: 13),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.titleSmall?.copyWith(fontSize: 13),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       formatNaira(product.price),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 15,
-                          ),
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -167,9 +171,9 @@ class _ProductCardState extends State<ProductCard>
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondary,
-                            fontSize: 11,
-                          ),
+                        color: AppColors.textSecondary,
+                        fontSize: 11,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     // ── Bottom row ──
@@ -186,12 +190,12 @@ class _ProductCardState extends State<ProductCard>
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: Text(
-                              isSold ? 'Unavailable' : 'Ready for meetup',
+                              product.status == 'available'
+                                  ? product.stockLabel
+                                  : 'Unavailable',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
+                              style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(
                                     color: AppColors.textPrimary,
                                     fontWeight: FontWeight.w600,
@@ -224,5 +228,29 @@ class _ProductCardState extends State<ProductCard>
         ),
       ),
     );
+  }
+
+  String _statusLabel(String status) {
+    return switch (status) {
+      'sold' => 'Sold',
+      'reserved' => 'Reserved',
+      _ => 'Available',
+    };
+  }
+
+  Color _statusBackground(String status) {
+    return switch (status) {
+      'sold' => AppColors.warningSoft,
+      'reserved' => const Color(0xFFEAF0FF),
+      _ => AppColors.successSoft,
+    };
+  }
+
+  Color _statusForeground(String status) {
+    return switch (status) {
+      'sold' => Colors.orange.shade900,
+      'reserved' => const Color(0xFF2F4A9E),
+      _ => AppColors.primaryDark,
+    };
   }
 }

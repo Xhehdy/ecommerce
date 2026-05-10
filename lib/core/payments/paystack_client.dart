@@ -14,4 +14,3 @@ class PaystackClient {
     return _paystack.launch(accessCode);
   }
 }
-

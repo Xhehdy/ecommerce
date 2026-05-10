@@ -12,7 +12,8 @@ class AppStrings {
   static const String signIn = 'Sign In';
   static const String signUp = 'Register';
   static const String signInSubtitle = 'Access your exclusive marketplace.';
-  static const String signUpSubtitle = 'Create an account to join the marketplace.';
+  static const String signUpSubtitle =
+      'Create an account to join the marketplace.';
   static const String signInAction = 'SIGN IN';
   static const String signUpAction = 'CREATE ACCOUNT';
   static const String signOutAction = 'SIGN OUT';
@@ -25,16 +26,20 @@ class AppStrings {
   // ── Profile ──────────────────────────────────────────────
   static const String profileTitle = 'Profile';
   static const String saveProfile = 'SAVE PROFILE';
-  static const String profileBio = 'A complete profile makes your listings feel safer and more credible to buyers on campus.';
+  static const String profileBio =
+      'A complete profile makes your listings feel safer and more credible to buyers on campus.';
   static const String marketplaceIdentity = 'Marketplace Identity';
-  static const String identityHint = 'Use your real details so buyers know who they are dealing with.';
+  static const String identityHint =
+      'Use your real details so buyers know who they are dealing with.';
 
   // ── Home ─────────────────────────────────────────────────
   static const String welcomeBack = 'Welcome back';
-  static const String campusHero = 'Fresh campus finds, ready for quick meetups and safer student-to-student selling.';
+  static const String campusHero =
+      'Fresh campus finds, ready for quick meetups and safer student-to-student selling.';
   static const String browseByCategory = 'Browse by Category';
   static const String latestListings = 'Latest Listings';
-  static const String searchPlaceholder = 'Search for phones, clothes, textbooks...';
+  static const String searchPlaceholder =
+      'Search for phones, clothes, textbooks...';
 
   // ── Product ──────────────────────────────────────────────
   static const String details = 'Details';
@@ -51,7 +56,8 @@ class AppStrings {
   // ── Delete ───────────────────────────────────────────────
   static const String deleteListing = 'DELETE LISTING';
   static const String deleteConfirmTitle = 'Delete Listing';
-  static const String deleteConfirmMessage = 'This listing and its images will be permanently removed. This action cannot be undone.';
+  static const String deleteConfirmMessage =
+      'This listing and its images will be permanently removed. This action cannot be undone.';
   static const String deleteSuccess = 'Listing deleted.';
 
   // ── Listings ─────────────────────────────────────────────
@@ -82,7 +88,8 @@ class AppStrings {
 
   // ── Checkout ─────────────────────────────────────────────
   static const String checkoutTitle = 'Checkout';
-  static const String checkoutMessage = 'You will be asked to complete payment with Paystack. If you cancel, the listing becomes available again.';
+  static const String checkoutMessage =
+      'You will be asked to complete payment with Paystack. If you cancel, the listing becomes available again.';
   static const String paymentSuccess = 'Payment successful. Order created.';
   static const String paymentCancelled = 'Payment cancelled.';
 

@@ -34,12 +34,14 @@ class MarketplaceOrderItem {
   final String id;
   final String productId;
   final double price;
+  final int quantity;
   final Product? product;
 
   const MarketplaceOrderItem({
     required this.id,
     required this.productId,
     required this.price,
+    this.quantity = 1,
     this.product,
   });
 
@@ -51,9 +53,12 @@ class MarketplaceOrderItem {
       id: json['id'] as String,
       productId: json['product_id'] as String,
       price: (json['price'] as num).toDouble(),
+      quantity: json['quantity'] as int? ?? 1,
       product: product,
     );
   }
+
+  double get lineTotal => price * quantity;
 }
 
 class MarketplaceOrder {
@@ -62,6 +67,13 @@ class MarketplaceOrder {
   final String sellerId;
   final double totalAmount;
   final String status;
+  final String? paymentProvider;
+  final String? paymentReference;
+  final String? paymentBatchId;
+  final String? meetupLocation;
+  final DateTime? paidAt;
+  final DateTime? handedOverAt;
+  final DateTime? completedAt;
   final DateTime? createdAt;
   final MarketplaceOrderRole role;
   final OrderCounterparty? counterparty;
@@ -74,12 +86,22 @@ class MarketplaceOrder {
     required this.totalAmount,
     required this.status,
     required this.role,
+    this.paymentProvider,
+    this.paymentReference,
+    this.paymentBatchId,
+    this.meetupLocation,
+    this.paidAt,
+    this.handedOverAt,
+    this.completedAt,
     this.createdAt,
     this.counterparty,
     this.item,
   });
 
-  bool get isPending => status == 'pending' || status == 'pending_payment';
+  bool get isPending =>
+      status == 'pending' ||
+      status == 'pending_payment' ||
+      status == 'pending_meetup';
 
   factory MarketplaceOrder.fromJson(
     Map<String, dynamic> json, {
@@ -93,6 +115,19 @@ class MarketplaceOrder {
       sellerId: json['seller_id'] as String,
       totalAmount: (json['total_amount'] as num).toDouble(),
       status: json['status'] as String? ?? 'pending',
+      paymentProvider: json['payment_provider'] as String?,
+      paymentReference: json['payment_reference'] as String?,
+      paymentBatchId: json['payment_batch_id'] as String?,
+      meetupLocation: json['meetup_location'] as String?,
+      paidAt: json['paid_at'] != null
+          ? DateTime.parse(json['paid_at'] as String)
+          : null,
+      handedOverAt: json['handed_over_at'] != null
+          ? DateTime.parse(json['handed_over_at'] as String)
+          : null,
+      completedAt: json['completed_at'] != null
+          ? DateTime.parse(json['completed_at'] as String)
+          : null,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : null,

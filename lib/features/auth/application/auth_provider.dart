@@ -9,6 +9,7 @@ final authStateProvider = StreamProvider<AuthState>((ref) {
 });
 
 final currentUserProvider = Provider<User?>((ref) {
+  ref.watch(authStateProvider);
   final authRepository = ref.watch(authRepositoryProvider);
   return authRepository.currentUser;
 });
@@ -52,6 +53,14 @@ class AuthController {
 
   Future<void> signOut() {
     return _authRepository.signOut();
+  }
+
+  Future<void> requestPasswordReset(String email, {String? redirectTo}) {
+    return _authRepository.requestPasswordReset(email, redirectTo: redirectTo);
+  }
+
+  Future<void> updatePassword(String newPassword) {
+    return _authRepository.updatePassword(newPassword);
   }
 
   Future<void> ensureCurrentUserProfile() {

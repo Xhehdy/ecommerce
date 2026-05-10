@@ -6,21 +6,21 @@ class AppTextStyles {
     fontSize: 32,
     fontWeight: FontWeight.bold,
     color: AppColors.textPrimary,
-    letterSpacing: -1.0,
+    letterSpacing: 0,
   );
 
   static const TextStyle displayMedium = TextStyle(
     fontSize: 28,
     fontWeight: FontWeight.bold,
     color: AppColors.textPrimary,
-    letterSpacing: -0.5,
+    letterSpacing: 0,
   );
 
   static const TextStyle titleLarge = TextStyle(
     fontSize: 22,
     fontWeight: FontWeight.w600,
     color: AppColors.textPrimary,
-    letterSpacing: -0.5,
+    letterSpacing: 0,
   );
 
   static const TextStyle titleMedium = TextStyle(
@@ -56,7 +56,7 @@ class AppTextStyles {
   static const TextStyle labelLarge = TextStyle(
     fontSize: 15,
     fontWeight: FontWeight.w600,
-    letterSpacing: 1.2,
+    letterSpacing: 0,
   );
 
   static TextTheme get textTheme {

@@ -56,6 +56,27 @@ class AuthRepository {
     await _supabase.auth.signOut();
   }
 
+  Future<void> requestPasswordReset(
+    String email, {
+    String? redirectTo,
+  }) async {
+    final normalizedEmail = email.trim();
+    if (normalizedEmail.isEmpty) {
+      throw ArgumentError('Email is required.');
+    }
+    await _supabase.auth.resetPasswordForEmail(
+      normalizedEmail,
+      redirectTo: redirectTo,
+    );
+  }
+
+  Future<void> updatePassword(String newPassword) async {
+    if (newPassword.isEmpty) {
+      throw ArgumentError('Password is required.');
+    }
+    await _supabase.auth.updateUser(UserAttributes(password: newPassword));
+  }
+
   Future<void> ensureCurrentUserProfile() async {
     final user = currentUser;
     if (user == null) {

@@ -75,34 +75,32 @@ class ProductCardShimmer extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          AspectRatio(
-            aspectRatio: 1.08,
-            child: ClipRRect(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-              child: ShimmerBox(borderRadius: 0),
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ShimmerBox(height: 14, width: double.infinity),
-                  SizedBox(height: 10),
-                  ShimmerBox(height: 18, width: 80),
-                  SizedBox(height: 10),
-                  ShimmerBox(height: 10, width: 100),
-                  Spacer(),
-                  ShimmerBox(height: 34, width: double.infinity),
-                ],
-              ),
+          Expanded(child: ShimmerBox(borderRadius: 16)),
+          Padding(
+            padding: EdgeInsets.fromLTRB(12, 10, 12, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ShimmerBox(height: 13, width: double.infinity),
+                SizedBox(height: 4),
+                ShimmerBox(height: 15, width: 80),
+                SizedBox(height: 4),
+                ShimmerBox(height: 11, width: 100),
+                SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(child: ShimmerBox(height: 28, borderRadius: 999)),
+                    SizedBox(width: 6),
+                    ShimmerBox(height: 28, width: 28, borderRadius: 999),
+                  ],
+                ),
+              ],
             ),
           ),
         ],

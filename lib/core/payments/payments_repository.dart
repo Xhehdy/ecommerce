@@ -12,11 +12,7 @@ class PaymentsRepository {
   }) async {
     final res = await _client.functions.invoke(
       'paystack-initialize',
-      body: {
-        'email': email,
-        'amountKobo': amountKobo,
-        'reference': reference,
-      },
+      body: {'email': email, 'amountKobo': amountKobo, 'reference': reference},
     );
 
     final data = res.data;
@@ -51,4 +47,3 @@ class PaymentsRepository {
     return paid;
   }
 }
-

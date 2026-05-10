@@ -22,14 +22,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   bool _isSigningOut = false;
 
   String _initialsFor(UserProfile profile) {
-    final source = (profile.fullName?.trim().isNotEmpty == true
-            ? profile.fullName!.trim()
-            : profile.email.trim())
-        .split(RegExp(r'\s+|@'))
-        .where((part) => part.isNotEmpty)
-        .take(2)
-        .map((part) => part[0].toUpperCase())
-        .join();
+    final source =
+        (profile.fullName?.trim().isNotEmpty == true
+                ? profile.fullName!.trim()
+                : profile.email.trim())
+            .split(RegExp(r'\s+|@'))
+            .where((part) => part.isNotEmpty)
+            .take(2)
+            .map((part) => part[0].toUpperCase())
+            .join();
 
     return source.isEmpty ? 'A' : source;
   }
@@ -67,9 +68,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final listingsAsync = ref.watch(myListingsProvider);
     final purchasesAsync = ref.watch(purchaseOrdersProvider);
     final salesAsync = ref.watch(salesOrdersProvider);
+    final favoritesAsync = ref.watch(favoriteProductsProvider);
 
     final listingsCount = listingsAsync.asData?.value.length ?? 0;
-    final ordersCount = (purchasesAsync.asData?.value.length ?? 0) +
+    final savedCount = favoritesAsync.asData?.value.length ?? 0;
+    final ordersCount =
+        (purchasesAsync.asData?.value.length ?? 0) +
         (salesAsync.asData?.value.length ?? 0);
 
     return Scaffold(
@@ -77,7 +81,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         title: const Text('Profile'),
         actions: [
           IconButton(
-            onPressed: () {},
+            tooltip: 'Settings',
+            onPressed: () => context.push('/settings'),
             icon: const Icon(Icons.settings_outlined),
           ),
         ],
@@ -88,12 +93,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       body: profileAsync.when(
         data: (profile) {
           if (profile == null) {
-            return const Center(
-              child: Text('No profile found for this account.'),
+            return _MissingProfileState(
+              isSigningOut: _isSigningOut,
+              onRetry: () => ref.invalidate(profileProvider),
+              onSignOut: _signOut,
             );
           }
 
-          final isIdentityComplete = profile.fullName?.isNotEmpty == true &&
+          final isIdentityComplete =
+              profile.fullName?.isNotEmpty == true &&
               profile.matricNumber?.isNotEmpty == true &&
               profile.faculty?.isNotEmpty == true &&
               profile.phone?.isNotEmpty == true;
@@ -165,7 +173,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                     child: Text(
                                       profile.email,
                                       style: TextStyle(
-                                        color: Colors.white.withValues(alpha: 0.8),
+                                        color: Colors.white.withValues(
+                                          alpha: 0.8,
+                                        ),
                                         fontSize: 14,
                                       ),
                                     ),
@@ -173,7 +183,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 const SizedBox(height: 8),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 4),
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: Colors.white,
                                     borderRadius: BorderRadius.circular(12),
@@ -181,9 +193,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Text(
-                                        'Verified student',
-                                        style: TextStyle(
+                                      Text(
+                                        isIdentityComplete
+                                            ? 'Verified student'
+                                            : 'Not verified',
+                                        style: const TextStyle(
                                           color: AppColors.primaryDark,
                                           fontSize: 12,
                                           fontWeight: FontWeight.w700,
@@ -191,7 +205,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                       ),
                                       const SizedBox(width: 4),
                                       Icon(
-                                        Icons.check_circle,
+                                        isIdentityComplete
+                                            ? Icons.check_circle
+                                            : Icons.info_outline,
                                         size: 14,
                                         color: AppColors.primaryDark,
                                       ),
@@ -241,10 +257,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             color: Colors.white.withValues(alpha: 0.1),
                           ),
                           _StatColumn(
-                            label: 'Rating',
-                            value: '4.8',
-                            sublabel: '(12 reviews)',
-                            hasStar: true,
+                            label: 'Saved',
+                            value: savedCount.toString(),
+                            sublabel: 'Items',
                           ),
                         ],
                       ),
@@ -285,9 +300,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             children: [
                               Text(
                                 'Complete your identity',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleSmall
+                                style: Theme.of(context).textTheme.titleSmall
                                     ?.copyWith(fontWeight: FontWeight.w700),
                               ),
                               const SizedBox(height: 2),
@@ -304,13 +317,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           style: OutlinedButton.styleFrom(
                             minimumSize: Size.zero,
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 8),
+                              horizontal: 14,
+                              vertical: 8,
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
-                          child: const Text('Edit profile',
-                              style: TextStyle(fontSize: 13)),
+                          child: const Text(
+                            'Edit profile',
+                            style: TextStyle(fontSize: 13),
+                          ),
                         ),
                       ],
                     ),
@@ -320,9 +337,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 Text(
                   'Marketplace identity',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Container(
@@ -378,9 +395,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 Text(
                   'Account',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Container(
@@ -409,18 +426,28 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         icon: Icons.favorite_border,
                         label: 'Saved items',
                         subtitle: 'Items you\'ve saved for later',
-                        onTap: () => context.push('/favorites'),
+                        onTap: () => context.push('/saved'),
                       ),
                       _Divider(),
                       _AccountTile(
                         icon: Icons.notifications_none_outlined,
                         label: 'Notifications',
                         subtitle: 'Manage your alerts and updates',
-                        onTap: () {},
+                        onTap: () => context.push('/notifications'),
+                      ),
+                      _Divider(),
+                      _AccountTile(
+                        icon: Icons.help_outline_rounded,
+                        label: 'Help & safety',
+                        subtitle: 'Buying, selling, payments, and meetup tips',
+                        onTap: () => context.push('/help'),
                       ),
                       _Divider(),
                       ListTile(
-                        leading: const Icon(Icons.logout, color: AppColors.error),
+                        leading: const Icon(
+                          Icons.logout,
+                          color: AppColors.error,
+                        ),
                         title: const Text(
                           'Sign out',
                           style: TextStyle(
@@ -436,7 +463,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             ? const SizedBox(
                                 height: 20,
                                 width: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : const Icon(Icons.chevron_right_rounded),
                         onTap: _isSigningOut ? null : _signOut,
@@ -461,17 +490,99 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 }
 
+class _MissingProfileState extends StatelessWidget {
+  final bool isSigningOut;
+  final VoidCallback onRetry;
+  final VoidCallback onSignOut;
+
+  const _MissingProfileState({
+    required this.isSigningOut,
+    required this.onRetry,
+    required this.onSignOut,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(24),
+      children: [
+        const SizedBox(height: 60),
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            children: [
+              Container(
+                height: 64,
+                width: 64,
+                decoration: const BoxDecoration(
+                  color: AppColors.surfaceMuted,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.person_search_outlined,
+                  color: AppColors.primaryDark,
+                  size: 30,
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'Profile is still syncing',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Refresh the profile, or sign out and sign back in if this account was just created.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 22),
+              ElevatedButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                label: const Text('Refresh profile'),
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: isSigningOut ? null : onSignOut,
+                icon: isSigningOut
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.logout_rounded, size: 18),
+                label: const Text('Sign out'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.error,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _StatColumn extends StatelessWidget {
   final String label;
   final String value;
   final String sublabel;
-  final bool hasStar;
 
   const _StatColumn({
     required this.label,
     required this.value,
     required this.sublabel,
-    this.hasStar = false,
   });
 
   @override
@@ -490,10 +601,6 @@ class _StatColumn extends StatelessWidget {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (hasStar) ...[
-              const Icon(Icons.star, color: Color(0xFFFFC107), size: 16),
-              const SizedBox(width: 4),
-            ],
             Text(
               value,
               style: const TextStyle(
@@ -534,16 +641,32 @@ class _IdentityTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       leading: Icon(icon, color: AppColors.textSecondary, size: 22),
-      title: Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+      title: Text(
+        label,
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+      ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            value,
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 150),
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 13,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.end,
+            ),
           ),
           const SizedBox(width: 4),
-          const Icon(Icons.chevron_right_rounded, size: 20, color: AppColors.textSecondary),
+          const Icon(
+            Icons.chevron_right_rounded,
+            size: 20,
+            color: AppColors.textSecondary,
+          ),
         ],
       ),
       onTap: onTap,
@@ -570,7 +693,10 @@ class _AccountTile extends StatelessWidget {
       leading: Icon(icon, color: AppColors.primaryDark, size: 24),
       title: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
       subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
-      trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+      trailing: const Icon(
+        Icons.chevron_right_rounded,
+        color: AppColors.textSecondary,
+      ),
       onTap: onTap,
     );
   }
@@ -579,7 +705,12 @@ class _AccountTile extends StatelessWidget {
 class _Divider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return const Divider(height: 1, indent: 16, endIndent: 16, color: AppColors.border);
+    return const Divider(
+      height: 1,
+      indent: 16,
+      endIndent: 16,
+      color: AppColors.border,
+    );
   }
 }
 
@@ -605,7 +736,9 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
   void initState() {
     super.initState();
     _fullNameController = TextEditingController(text: widget.profile.fullName);
-    _matricNumberController = TextEditingController(text: widget.profile.matricNumber);
+    _matricNumberController = TextEditingController(
+      text: widget.profile.matricNumber,
+    );
     _facultyController = TextEditingController(text: widget.profile.faculty);
     _phoneController = TextEditingController(text: widget.profile.phone);
   }
@@ -625,7 +758,9 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
     setState(() => _isSaving = true);
 
     try {
-      await ref.read(authControllerProvider).updateProfile(
+      await ref
+          .read(authControllerProvider)
+          .updateProfile(
             fullName: _fullNameController.text.trim(),
             matricNumber: _matricNumberController.text.trim(),
             faculty: _facultyController.text.trim(),
@@ -670,7 +805,9 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                   children: [
                     Text(
                       'Edit Profile',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     IconButton(
                       onPressed: () => Navigator.of(context).pop(),
@@ -682,7 +819,9 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                 TextFormField(
                   controller: _fullNameController,
                   decoration: const InputDecoration(labelText: 'Full Name'),
-                  validator: (value) => value == null || value.trim().isEmpty ? 'Full name is required' : null,
+                  validator: (value) => value == null || value.trim().isEmpty
+                      ? 'Full name is required'
+                      : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -707,7 +846,10 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
                       ? const SizedBox(
                           height: 20,
                           width: 20,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
                         )
                       : const Text(AppStrings.saveProfile),
                 ),

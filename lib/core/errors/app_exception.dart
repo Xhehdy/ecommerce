@@ -10,4 +10,3 @@ class AppException implements Exception {
   @override
   String toString() => message;
 }
-

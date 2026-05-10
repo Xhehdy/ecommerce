@@ -41,7 +41,7 @@ class AppTheme {
           color: AppColors.textPrimary,
           fontSize: 20,
           fontWeight: FontWeight.w700,
-          letterSpacing: -0.5,
+          letterSpacing: 0,
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -56,7 +56,7 @@ class AppTheme {
           textStyle: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w600,
-            letterSpacing: 0.6,
+            letterSpacing: 0,
           ),
         ),
       ),
@@ -71,7 +71,7 @@ class AppTheme {
           textStyle: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w600,
-            letterSpacing: 0.4,
+            letterSpacing: 0,
           ),
         ),
       ),
@@ -153,7 +153,7 @@ class AppTheme {
           foregroundColor: AppColors.primary,
           textStyle: const TextStyle(
             fontWeight: FontWeight.w600,
-            letterSpacing: 0.5,
+            letterSpacing: 0,
           ),
         ),
       ),
