@@ -97,7 +97,19 @@ class MyListingsScreen extends ConsumerWidget {
     final listingsAsync = ref.watch(myListingsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text(AppStrings.myListings)),
+      appBar: AppBar(
+        title: const Text(AppStrings.myListings),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+              return;
+            }
+            context.go('/profile');
+          },
+        ),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/sell'),
         backgroundColor: AppColors.primary,
@@ -212,7 +224,7 @@ class MyListingsScreen extends ConsumerWidget {
                   ),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(20),
-                    onTap: () => context.go('/product/${product.id}'),
+                    onTap: () => context.push('/product/${product.id}'),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(

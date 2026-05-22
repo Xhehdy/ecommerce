@@ -35,6 +35,7 @@ Color _orderAccentColor(String status) {
 
 IconData _orderAccentIcon(String status) {
   return switch (status) {
+    'active' => Icons.location_on_outlined,
     'pending' => Icons.location_on_outlined,
     'pending_payment' => Icons.payment_rounded,
     'pending_meetup' => Icons.location_on_outlined,
@@ -42,7 +43,7 @@ IconData _orderAccentIcon(String status) {
     'handed_over' => Icons.verified_outlined,
     'completed' => Icons.check_circle_outline,
     'cancelled' => Icons.cancel_outlined,
-    _ => Icons.receipt_long_outlined,
+    _ => Icons.location_on_outlined,
   };
 }
 
@@ -57,13 +58,14 @@ String _orderStatusBadgeLabel(String status) {
 String _orderActionTitle(MarketplaceOrder order, bool isPurchases) {
   return switch (order.status) {
     'pending_payment' => 'Finish checkout',
+    'active' ||
     'pending' ||
     'pending_meetup' ||
     'awaiting_handoff' ||
     'handed_over' => isPurchases ? 'Track order' : 'Manage sale',
     'completed' => 'Order completed',
     'cancelled' => 'Order cancelled',
-    _ => 'Review order',
+    _ => isPurchases ? 'Track order' : 'Manage sale',
   };
 }
 
@@ -72,6 +74,10 @@ String _orderActionSubtitle(MarketplaceOrder order, bool isPurchases) {
 
   return switch (order.status) {
     'pending_payment' => 'Complete payment to keep this order active.',
+    'active' =>
+      isPurchases
+          ? 'Meet seller at $meetupLabel'
+          : 'Meet buyer at $meetupLabel',
     'pending' =>
       isPurchases
           ? 'Meet seller at $meetupLabel'
@@ -90,7 +96,10 @@ String _orderActionSubtitle(MarketplaceOrder order, bool isPurchases) {
           : 'Waiting for buyer confirmation.',
     'completed' => 'This order has been completed.',
     'cancelled' => 'This order has been cancelled.',
-    _ => 'Open the order for details.',
+    _ =>
+      isPurchases
+          ? 'Meet seller at $meetupLabel'
+          : 'Meet buyer at $meetupLabel',
   };
 }
 
@@ -587,21 +596,30 @@ class _OrderCard extends StatelessWidget {
                       icon: Icons.inventory_2_outlined,
                       label: 'Qty',
                       value: '$quantity',
+                      flex: 48,
+                      valueMaxLines: 1,
                     ),
                     _OrderFact(
                       icon: Icons.credit_card_outlined,
                       label: 'Payment',
                       value: _orderPaymentLabel(order),
+                      flex: 82,
+                      valueMaxLines: 1,
+                      valueSoftWrap: false,
                     ),
                     _OrderFact(
                       icon: Icons.location_on_outlined,
                       label: 'Meetup',
                       value: meetupLabel,
+                      flex: 85,
                     ),
                     _OrderFact(
                       icon: Icons.calendar_month_outlined,
                       label: 'Date',
                       value: createdAtLabel,
+                      flex: 105,
+                      valueMaxLines: 1,
+                      valueSoftWrap: false,
                     ),
                   ],
                 ),
@@ -701,12 +719,12 @@ class _OrderFactsRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         for (var index = 0; index < facts.length; index++) ...[
-          Expanded(child: facts[index]),
+          Expanded(flex: facts[index].flex, child: facts[index]),
           if (index != facts.length - 1)
             Container(
               width: 1,
               height: 40,
-              margin: const EdgeInsets.symmetric(horizontal: 5),
+              margin: const EdgeInsets.symmetric(horizontal: 3),
               color: AppColors.border,
             ),
         ],
@@ -745,11 +763,17 @@ class _OrderFact extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
+  final int flex;
+  final int valueMaxLines;
+  final bool valueSoftWrap;
 
   const _OrderFact({
     required this.icon,
     required this.label,
     required this.value,
+    this.flex = 1,
+    this.valueMaxLines = 2,
+    this.valueSoftWrap = true,
   });
 
   @override
@@ -757,8 +781,8 @@ class _OrderFact extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 18, color: AppColors.textSecondary),
-        const SizedBox(width: 5),
+        Icon(icon, size: 16, color: AppColors.textSecondary),
+        const SizedBox(width: 4),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -776,7 +800,8 @@ class _OrderFact extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 value,
-                maxLines: 2,
+                maxLines: valueMaxLines,
+                softWrap: valueSoftWrap,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppColors.textPrimary,
