@@ -168,13 +168,13 @@ class _OrdersHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
       child: Row(
         children: [
           Text(
             AppStrings.orders,
             style: Theme.of(context).textTheme.displayLarge?.copyWith(
-              fontSize: 36,
+              fontSize: 32,
               fontWeight: FontWeight.w900,
               color: AppColors.textPrimary,
             ),
@@ -218,9 +218,9 @@ class _OrdersSegmentedTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
       child: Container(
-        height: 54,
+        height: 50,
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(12),

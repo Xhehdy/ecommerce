@@ -91,8 +91,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(
-              horizontal: 28.0,
-              vertical: 24.0,
+              horizontal: 24.0,
+              vertical: 20.0,
             ),
             child: FadeTransition(
               opacity: _fadeIn,
@@ -123,14 +123,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     const Text(
                       AppStrings.brandMark,
                       style: TextStyle(
-                        fontSize: 32,
+                        fontSize: 30,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 0,
                         color: AppColors.textPrimary,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 40),
 
                     // ── Form section ──
                     Text(
@@ -144,7 +144,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       AppStrings.signInSubtitle,
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 24),
                     TextField(
                       controller: _emailController,
                       decoration: const InputDecoration(
@@ -183,7 +183,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         child: const Text('Forgot password?'),
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 28),
                     ElevatedButton(
                       onPressed: _isLoading ? null : _login,
                       child: _isLoading
@@ -197,7 +197,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             )
                           : const Text(AppStrings.signInAction),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
 
                     // ── Register link ──
                     Row(

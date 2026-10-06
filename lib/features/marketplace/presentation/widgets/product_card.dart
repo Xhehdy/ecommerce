@@ -79,7 +79,7 @@ class _ProductCardState extends State<ProductCard>
         child: Container(
           decoration: BoxDecoration(
             color: AppColors.surface,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(color: AppColors.border),
           ),
           clipBehavior: Clip.antiAlias,
@@ -121,8 +121,8 @@ class _ProductCardState extends State<ProductCard>
                       left: 8,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                          horizontal: 7,
+                          vertical: 3,
                         ),
                         decoration: BoxDecoration(
                           color: statusBackground,
@@ -133,7 +133,7 @@ class _ProductCardState extends State<ProductCard>
                           style: TextStyle(
                             color: statusForeground,
                             fontWeight: FontWeight.w700,
-                            fontSize: 10,
+                            fontSize: 9,
                           ),
                         ),
                       ),
@@ -144,7 +144,7 @@ class _ProductCardState extends State<ProductCard>
 
               // ── Info ──
               Padding(
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -154,36 +154,36 @@ class _ProductCardState extends State<ProductCard>
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(
                         context,
-                      ).textTheme.titleSmall?.copyWith(fontSize: 13),
+                      ).textTheme.titleSmall?.copyWith(fontSize: 12.5),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Text(
                       formatNaira(product.price),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: AppColors.primary,
                         fontWeight: FontWeight.w800,
-                        fontSize: 15,
+                        fontSize: 14,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Text(
                       metaText,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppColors.textSecondary,
-                        fontSize: 11,
+                        fontSize: 10,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     // ── Bottom row ──
                     Row(
                       children: [
                         Expanded(
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 6,
+                              horizontal: 7,
+                              vertical: 5,
                             ),
                             decoration: BoxDecoration(
                               color: AppColors.surfaceMuted,
@@ -199,22 +199,22 @@ class _ProductCardState extends State<ProductCard>
                                   ?.copyWith(
                                     color: AppColors.textPrimary,
                                     fontWeight: FontWeight.w600,
-                                    fontSize: 10,
+                                    fontSize: 9,
                                   ),
                             ),
                           ),
                         ),
                         const SizedBox(width: 6),
                         Container(
-                          height: 28,
-                          width: 28,
+                          height: 26,
+                          width: 26,
                           decoration: BoxDecoration(
                             color: AppColors.surfaceMuted,
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: const Icon(
                             Icons.arrow_outward_rounded,
-                            size: 14,
+                            size: 13,
                             color: AppColors.textPrimary,
                           ),
                         ),

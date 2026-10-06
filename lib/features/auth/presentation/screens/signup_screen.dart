@@ -116,7 +116,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(
-              horizontal: 28.0,
+              horizontal: 24.0,
               vertical: 8.0,
             ),
             child: FadeTransition(
@@ -138,7 +138,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
                       AppStrings.signUpSubtitle,
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 24),
                     TextField(
                       controller: _emailController,
                       decoration: const InputDecoration(
@@ -191,7 +191,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
                       ),
                       obscureText: _obscureConfirmPassword,
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 28),
                     ElevatedButton(
                       onPressed: _isLoading ? null : _signUp,
                       child: _isLoading
@@ -205,7 +205,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen>
                             )
                           : const Text(AppStrings.signUpAction),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [

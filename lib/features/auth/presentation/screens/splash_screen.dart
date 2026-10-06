@@ -127,7 +127,7 @@ class _SplashScreenState extends State<SplashScreen>
                     child: const Text(
                       'ATELIER.',
                       style: TextStyle(
-                        fontSize: 38,
+                        fontSize: 34,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 0,
                         color: Colors.white,
@@ -146,7 +146,7 @@ class _SplashScreenState extends State<SplashScreen>
                     child: Text(
                       'Buy & sell on campus',
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: 14,
                         fontWeight: FontWeight.w500,
                         color: Colors.white.withValues(alpha: 0.7),
                         letterSpacing: 0,

@@ -85,7 +85,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               SliverAppBar(
                 title: const Text(
                   'ATELIER.',
-                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 24),
+                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 22),
                 ),
                 actions: [
                   IconButton(
@@ -114,7 +114,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               if (categories.isNotEmpty)
                 SliverToBoxAdapter(
                   child: SizedBox(
-                    height: 90,
+                    height: 82,
                     child: ShaderMask(
                       shaderCallback: (bounds) {
                         return const LinearGradient(
@@ -132,7 +132,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       blendMode: BlendMode.dstIn,
                       child: ListView(
                         scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
                         children: [
                           _CategoryPill(
                             label: 'All',
@@ -141,10 +141,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             onTap: () =>
                                 setState(() => _selectedCategoryId = null),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 10),
                           for (final category in categories)
                             Padding(
-                              padding: const EdgeInsets.only(right: 12),
+                              padding: const EdgeInsets.only(right: 10),
                               child: _CategoryPill(
                                 label: category.displayName,
                                 icon: _iconForCategory(category.displayName),
@@ -178,12 +178,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: _showPromoBanner
                       ? Padding(
                           key: const ValueKey('promo-banner'),
-                          padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
                           child: Container(
-                            padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
                             decoration: BoxDecoration(
                               color: AppColors.primaryDark,
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(18),
                             ),
                             child: Stack(
                               children: [
@@ -194,28 +194,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                       'Buy. Sell. Connect.',
                                       style: TextStyle(
                                         color: Colors.white,
-                                        fontSize: 19,
+                                        fontSize: 17,
                                         fontWeight: FontWeight.w800,
                                       ),
                                     ),
-                                    const SizedBox(height: 8),
+                                    const SizedBox(height: 6),
                                     Text(
                                       'A trusted marketplace\nfor our campus community.',
                                       style: TextStyle(
                                         color: Colors.white.withValues(
                                           alpha: 0.8,
                                         ),
-                                        fontSize: 13,
-                                        height: 1.4,
+                                        fontSize: 12,
+                                        height: 1.32,
                                       ),
                                     ),
-                                    const SizedBox(height: 14),
+                                    const SizedBox(height: 12),
                                     ElevatedButton(
                                       onPressed: () => context.push('/sell'),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.white,
                                         foregroundColor: AppColors.primaryDark,
-                                        minimumSize: const Size(120, 40),
+                                        minimumSize: const Size(118, 36),
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 16,
                                         ),
@@ -232,7 +232,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                             'Sell an item',
                                             style: TextStyle(
                                               fontWeight: FontWeight.w700,
-                                              fontSize: 13,
+                                              fontSize: 12,
                                             ),
                                           ),
                                           SizedBox(width: 4),
@@ -275,7 +275,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               // ── Latest Listings Header ──
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 10),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -334,12 +334,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   }
 
                   return SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
                     sliver: SliverGrid(
                       gridDelegate:
                           const SliverGridDelegateWithMaxCrossAxisExtent(
                             maxCrossAxisExtent: 240,
-                            mainAxisExtent: 245,
+                            mainAxisExtent: 236,
                             crossAxisSpacing: 12,
                             mainAxisSpacing: 16,
                           ),
@@ -352,12 +352,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   );
                 },
                 loading: () => SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
                   sliver: SliverGrid(
                     gridDelegate:
                         const SliverGridDelegateWithMaxCrossAxisExtent(
                           maxCrossAxisExtent: 240,
-                          mainAxisExtent: 245,
+                          mainAxisExtent: 236,
                           crossAxisSpacing: 12,
                           mainAxisSpacing: 16,
                         ),
@@ -400,22 +400,25 @@ class _SearchHeaderDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        boxShadow: overlapsContent
-            ? [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.06),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                ),
-              ]
-            : null,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-        child: _HomeSearchButton(onTap: onTap),
+    return Align(
+      alignment: Alignment.topCenter,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          boxShadow: overlapsContent
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ]
+              : null,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+          child: _HomeSearchButton(onTap: onTap),
+        ),
       ),
     );
   }
@@ -440,27 +443,31 @@ class _HomeSearchButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(color: AppColors.border),
           ),
           child: Row(
             children: [
-              const Icon(Icons.search, color: AppColors.textSecondary),
-              const SizedBox(width: 12),
+              const Icon(
+                Icons.search,
+                color: AppColors.textSecondary,
+                size: 20,
+              ),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   'Search for phones, clothes, textbooks...',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.textSecondary,
-                    fontSize: 15,
+                    fontSize: 13,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const Icon(Icons.tune, color: AppColors.textSecondary),
+              const Icon(Icons.tune, color: AppColors.textSecondary, size: 20),
             ],
           ),
         ),
@@ -491,24 +498,24 @@ class _CategoryPill extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 80,
+        width: 76,
         padding: const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
           color: bgColor,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(color: borderColor),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: fgColor, size: 28),
-            const SizedBox(height: 6),
+            Icon(icon, color: fgColor, size: 26),
+            const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
                 color: fgColor,
-                fontSize: 11,
-                height: 1.1,
+                fontSize: 10,
+                height: 1.05,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
               ),
               textAlign: TextAlign.center,

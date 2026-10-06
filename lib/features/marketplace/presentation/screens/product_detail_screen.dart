@@ -533,14 +533,14 @@ class ProductDetailScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(22),
                   child: _ProductImageGallery(images: product.images),
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(24, 28, 24, 0),
+                padding: const EdgeInsets.fromLTRB(20, 22, 20, 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -552,7 +552,7 @@ class ProductDetailScreen extends ConsumerWidget {
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.displayMedium
                             ?.copyWith(
-                              fontSize: 32,
+                              fontSize: 28,
                               fontWeight: FontWeight.w900,
                               color: AppColors.textPrimary,
                             ),
@@ -564,11 +564,11 @@ class ProductDetailScreen extends ConsumerWidget {
                       style: Theme.of(context).textTheme.displayMedium
                           ?.copyWith(
                             color: AppColors.primary,
-                            fontSize: 38,
+                            fontSize: 32,
                             fontWeight: FontWeight.w900,
                           ),
                     ),
-                    const SizedBox(height: 22),
+                    const SizedBox(height: 18),
                     _ListingSnapshot(
                       statusLabel: product.canOrder
                           ? _statusLabel(product.status)
@@ -589,7 +589,7 @@ class ProductDetailScreen extends ConsumerWidget {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(24, 26, 24, 0),
+                padding: const EdgeInsets.fromLTRB(20, 22, 20, 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

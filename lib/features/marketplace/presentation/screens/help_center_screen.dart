@@ -23,10 +23,10 @@ class HelpCenterScreen extends StatelessWidget {
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
         children: [
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               color: AppColors.primaryDark,
               borderRadius: BorderRadius.circular(22),
@@ -37,23 +37,23 @@ class HelpCenterScreen extends StatelessWidget {
                 const Icon(
                   Icons.verified_user_outlined,
                   color: Colors.white,
-                  size: 30,
+                  size: 28,
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 12),
                 const Text(
                   'Safer campus trades',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 21,
+                    fontSize: 19,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
                   'Keep payments in-app, meet in public campus spots, and confirm item condition before handoff.',
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.82),
-                    height: 1.4,
+                    height: 1.32,
                   ),
                 ),
               ],

@@ -12,7 +12,8 @@ class ResetPasswordScreen extends ConsumerStatefulWidget {
   const ResetPasswordScreen({super.key});
 
   @override
-  ConsumerState<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
+  ConsumerState<ResetPasswordScreen> createState() =>
+      _ResetPasswordScreenState();
 }
 
 class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
@@ -68,12 +69,12 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
                   borderRadius: BorderRadius.circular(20),
@@ -94,7 +95,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         size: 32,
                       ),
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 14),
                     Text(
                       'Choose a new password',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -115,7 +116,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               Form(
                 key: _formKey,
                 child: Column(
@@ -124,18 +125,22 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     TextFormField(
                       controller: _passwordController,
                       obscureText: true,
-                      decoration: const InputDecoration(labelText: 'New password'),
+                      decoration: const InputDecoration(
+                        labelText: 'New password',
+                      ),
                       validator: validateNewPassword,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
                     TextFormField(
                       controller: _confirmController,
                       obscureText: true,
-                      decoration:
-                          const InputDecoration(labelText: 'Confirm password'),
+                      decoration: const InputDecoration(
+                        labelText: 'Confirm password',
+                      ),
                       validator: (value) {
-                        final passwordError =
-                            validateNewPassword(_passwordController.text);
+                        final passwordError = validateNewPassword(
+                          _passwordController.text,
+                        );
                         if (passwordError != null) {
                           return passwordError;
                         }
@@ -145,7 +150,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         );
                       },
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                     ElevatedButton(
                       onPressed: _isSubmitting || !isRecoverySession
                           ? null
@@ -171,4 +176,3 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     );
   }
 }
-

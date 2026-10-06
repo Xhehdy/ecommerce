@@ -107,16 +107,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               profile.phone?.isNotEmpty == true;
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // ── Dark Green Header Card ──
                 Container(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: AppColors.primaryDark,
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(22),
                     boxShadow: [
                       BoxShadow(
                         color: AppColors.primaryDark.withValues(alpha: 0.2),
@@ -130,8 +130,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       Row(
                         children: [
                           Container(
-                            height: 64,
-                            width: 64,
+                            height: 56,
+                            width: 56,
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.15),
                               shape: BoxShape.circle,
@@ -145,12 +145,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               _initialsFor(profile),
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 24,
+                                fontSize: 20,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
                           ),
-                          const SizedBox(width: 16),
+                          const SizedBox(width: 14),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -161,7 +161,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                       : profile.email,
                                   style: const TextStyle(
                                     color: Colors.white,
-                                    fontSize: 20,
+                                    fontSize: 18,
                                     fontWeight: FontWeight.w800,
                                   ),
                                   maxLines: 2,
@@ -176,15 +176,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                         color: Colors.white.withValues(
                                           alpha: 0.8,
                                         ),
-                                        fontSize: 14,
+                                        fontSize: 13,
                                       ),
                                     ),
                                   ),
-                                const SizedBox(height: 8),
+                                const SizedBox(height: 6),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 10,
-                                    vertical: 4,
+                                    vertical: 3,
                                   ),
                                   decoration: BoxDecoration(
                                     color: Colors.white,
@@ -199,7 +199,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                             : 'Not verified',
                                         style: const TextStyle(
                                           color: AppColors.primaryDark,
-                                          fontSize: 12,
+                                          fontSize: 11,
                                           fontWeight: FontWeight.w700,
                                         ),
                                       ),
@@ -222,17 +222,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             icon: const Icon(
                               Icons.chevron_right_rounded,
                               color: Colors.white,
-                              size: 28,
+                              size: 26,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
                       Container(
                         height: 1,
                         color: Colors.white.withValues(alpha: 0.1),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
