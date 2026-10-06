@@ -61,6 +61,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final nextFilters = await showModalBottomSheet<ProductSearchFilters>(
       context: context,
       isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(AppThemeValues.radiusLarge),
+          topRight: Radius.circular(AppThemeValues.radiusLarge),
+        ),
+      ),
       builder: (context) => _SearchFilterSheet(
         categories: categories,
         initialFilters: _filters.copyWith(query: _queryController.text.trim()),
@@ -171,18 +177,36 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           onDeleted: () {
                             _runSearch(_filters.copyWith(categoryId: null));
                           },
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              AppThemeValues.radiusSmall,
+                            ),
+                          ),
+                          side: const BorderSide(
+                            color: AppColors.border,
+                            width: AppThemeValues.borderWidth,
+                          ),
                         ),
                       ),
                     if (_filters.minPrice != null || _filters.maxPrice != null)
                       Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: Chip(
-                          label: Text('Price filtered'),
+                          label: const Text('Price filtered'),
                           onDeleted: () {
                             _runSearch(
                               _filters.copyWith(minPrice: null, maxPrice: null),
                             );
                           },
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              AppThemeValues.radiusSmall,
+                            ),
+                          ),
+                          side: const BorderSide(
+                            color: AppColors.border,
+                            width: AppThemeValues.borderWidth,
+                          ),
                         ),
                       ),
                     ActionChip(
@@ -194,6 +218,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           _hasSubmittedSearch = false;
                         });
                       },
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                          AppThemeValues.radiusSmall,
+                        ),
+                      ),
+                      side: const BorderSide(
+                        color: AppColors.border,
+                        width: AppThemeValues.borderWidth,
+                      ),
                     ),
                   ],
                 ),
@@ -265,10 +298,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                         backgroundColor: AppColors.surface,
                                         side: const BorderSide(
                                           color: AppColors.border,
+                                          width: AppThemeValues.borderWidth,
                                         ),
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(
-                                            999,
+                                            AppThemeValues.radiusSmall,
                                           ),
                                         ),
                                       );
@@ -340,11 +374,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                         alignment: Alignment.centerLeft,
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(
-                                            10,
+                                            AppThemeValues.radius,
                                           ),
                                         ),
                                         side: const BorderSide(
                                           color: AppColors.border,
+                                          width: AppThemeValues.borderWidth,
                                         ),
                                         backgroundColor: AppColors.surface,
                                       ),
@@ -468,8 +503,11 @@ class _SearchDiscoveryEmptyState extends StatelessWidget {
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: AppColors.surface,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: AppColors.border),
+            borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
+            border: Border.all(
+              color: AppColors.border,
+              width: AppThemeValues.borderWidth,
+            ),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -558,7 +596,7 @@ class _SuggestedProductTile extends ConsumerWidget {
               height: 72,
               decoration: BoxDecoration(
                 color: AppColors.surfaceMuted,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppThemeValues.radiusSmall),
               ),
               clipBehavior: Clip.antiAlias,
               child: product.images.isNotEmpty

@@ -29,8 +29,8 @@ class SettingsScreen extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: AppColors.surface,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.border),
+              borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
+              border: Border.all(color: AppColors.border, width: AppThemeValues.borderWidth),
             ),
             child: Column(
               children: [

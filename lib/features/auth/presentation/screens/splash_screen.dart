@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -97,20 +96,14 @@ class _SplashScreenState extends State<SplashScreen>
                       height: 80,
                       width: 80,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(22),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
                       ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(22),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                          child: const Center(
-                            child: Icon(
-                              Icons.storefront_rounded,
-                              color: Colors.white,
-                              size: 36,
-                            ),
-                          ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.storefront_rounded,
+                          color: AppColors.primary,
+                          size: 36,
                         ),
                       ),
                     ),

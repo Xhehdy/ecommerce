@@ -59,7 +59,7 @@ class MyListingsScreen extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge)),
         title: const Text(AppStrings.deleteConfirmTitle),
         content: const Text(AppStrings.deleteConfirmMessage),
         actions: [
@@ -113,6 +113,17 @@ class MyListingsScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/sell'),
         backgroundColor: AppColors.primary,
+        elevation: 0,
+        hoverElevation: 0,
+        focusElevation: 0,
+        highlightElevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppThemeValues.radius),
+          side: const BorderSide(
+            color: AppColors.primaryDark,
+            width: AppThemeValues.borderWidth,
+          ),
+        ),
         child: const Icon(Icons.add_rounded, color: Colors.white),
       ),
       body: RefreshIndicator(
@@ -129,8 +140,8 @@ class MyListingsScreen extends ConsumerWidget {
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: AppColors.border),
+                      borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
+                      border: Border.all(color: AppColors.border, width: AppThemeValues.borderWidth),
                     ),
                     child: Column(
                       children: [
@@ -190,8 +201,8 @@ class MyListingsScreen extends ConsumerWidget {
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppColors.border),
+                      borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
+                      border: Border.all(color: AppColors.border, width: AppThemeValues.borderWidth),
                     ),
                     child: Row(
                       children: [
@@ -219,11 +230,11 @@ class MyListingsScreen extends ConsumerWidget {
                 return Container(
                   decoration: BoxDecoration(
                     color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.border),
+                    borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
+                    border: Border.all(color: AppColors.border, width: AppThemeValues.borderWidth),
                   ),
                   child: InkWell(
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
                     onTap: () => context.push('/product/${product.id}'),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
@@ -233,7 +244,7 @@ class MyListingsScreen extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               ClipRRect(
-                                borderRadius: BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(AppThemeValues.radiusSmall),
                                 child: SizedBox(
                                   height: 88,
                                   width: 88,
@@ -284,7 +295,7 @@ class MyListingsScreen extends ConsumerWidget {
                                             ? Colors.orange.shade50
                                             : AppColors.successSoft,
                                         borderRadius: BorderRadius.circular(
-                                          999,
+                                          AppThemeValues.radiusSmall,
                                         ),
                                       ),
                                       child: Text(
@@ -321,9 +332,10 @@ class MyListingsScreen extends ConsumerWidget {
                                     foregroundColor: AppColors.error,
                                     side: const BorderSide(
                                       color: AppColors.border,
+                                      width: AppThemeValues.borderWidth,
                                     ),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(AppThemeValues.radius),
                                     ),
                                   ),
                                 ),
@@ -385,7 +397,7 @@ class _StatChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: AppColors.surfaceMuted,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppThemeValues.radiusSmall),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

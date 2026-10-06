@@ -223,8 +223,11 @@ class _OrdersSegmentedTabs extends StatelessWidget {
         height: 50,
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border),
+          borderRadius: BorderRadius.circular(AppThemeValues.radius),
+          border: Border.all(
+            color: AppColors.border,
+            width: AppThemeValues.borderWidth,
+          ),
         ),
         child: Stack(
           alignment: Alignment.center,
@@ -315,8 +318,11 @@ class _OrdersList extends ConsumerWidget {
                   ),
                   decoration: BoxDecoration(
                     color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: AppColors.border),
+                    borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
+                    border: Border.all(
+                      color: AppColors.border,
+                      width: AppThemeValues.borderWidth,
+                    ),
                   ),
                   child: Column(
                     children: [
@@ -361,7 +367,7 @@ class _OrdersList extends ConsumerWidget {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryDark,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(999),
+                            borderRadius: BorderRadius.circular(AppThemeValues.radius),
                           ),
                         ),
                         child: Text(
@@ -446,22 +452,18 @@ class _OrderCard extends StatelessWidget {
 
     return Material(
       color: AppColors.surface,
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
       child: InkWell(
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
         onTap: () => context.go('/orders/${order.id}'),
         child: Container(
           decoration: BoxDecoration(
             color: AppColors.surface,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: AppColors.border),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.035),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-            ],
+            borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
+            border: Border.all(
+              color: AppColors.border,
+              width: AppThemeValues.borderWidth,
+            ),
           ),
           child: Column(
             children: [
@@ -471,7 +473,7 @@ class _OrderCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(13),
+                      borderRadius: BorderRadius.circular(AppThemeValues.radiusSmall),
                       child: SizedBox(
                         height: 104,
                         width: 104,
@@ -558,7 +560,7 @@ class _OrderCard extends StatelessWidget {
                                 ),
                                 decoration: BoxDecoration(
                                   color: AppColors.surfaceMuted,
-                                  borderRadius: BorderRadius.circular(999),
+                                  borderRadius: BorderRadius.circular(AppThemeValues.radiusSmall),
                                 ),
                                 child: Text(
                                   counterpartyRoleLabel,
@@ -658,7 +660,7 @@ class _OrderActionRow extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppThemeValues.radius),
       ),
       child: Row(
         children: [
@@ -745,7 +747,7 @@ class _OrderStatusBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppThemeValues.radiusSmall),
       ),
       child: Text(
         label,
@@ -839,8 +841,11 @@ class _OrdersSummary extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 18),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
+        border: Border.all(
+          color: AppColors.border,
+          width: AppThemeValues.borderWidth,
+        ),
       ),
       child: Row(
         children: [
@@ -965,15 +970,18 @@ class _InfoTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: AppColors.surface,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.border),
+            borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
+            border: Border.all(
+              color: AppColors.border,
+              width: AppThemeValues.borderWidth,
+            ),
           ),
           child: Row(
             children: [

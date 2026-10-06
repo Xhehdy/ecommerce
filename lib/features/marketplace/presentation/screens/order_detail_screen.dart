@@ -171,14 +171,14 @@ class OrderDetailScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(color: AppColors.border),
+                  borderRadius: BorderRadius.circular(AppThemeValues.radius),
+                  border: Border.all(color: AppColors.border, width: AppThemeValues.borderWidth),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(AppThemeValues.radiusSmall),
                       child: SizedBox(
                         height: 88,
                         width: 88,
@@ -201,15 +201,19 @@ class OrderDetailScreen extends ConsumerWidget {
                           Text(
                             product?.title ?? 'Order ${order.id}',
                             style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w800),
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.15,
+                                ),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             formatNaira(order.totalAmount),
                             style: Theme.of(context).textTheme.titleMedium
                                 ?.copyWith(
-                                  color: AppColors.primaryDark,
+                                  color: AppColors.textPrimary,
                                   fontWeight: FontWeight.w900,
+                                  fontSize: 16,
                                 ),
                           ),
                           const SizedBox(height: 4),
@@ -232,7 +236,7 @@ class OrderDetailScreen extends ConsumerWidget {
                               orderStatusLabel(order.status).toUpperCase(),
                               style: const TextStyle(
                                 fontWeight: FontWeight.w800,
-                                fontSize: 12,
+                                fontSize: 11,
                                 color: AppColors.textPrimary,
                               ),
                             ),
@@ -248,16 +252,17 @@ class OrderDetailScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(color: AppColors.border),
+                  borderRadius: BorderRadius.circular(AppThemeValues.radius),
+                  border: Border.all(color: AppColors.border, width: AppThemeValues.borderWidth),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Checkout plan',
+                      'Checkout details',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w800,
+                        letterSpacing: -0.15,
                       ),
                     ),
                     const SizedBox(height: 14),
@@ -279,8 +284,8 @@ class OrderDetailScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(color: AppColors.border),
+                  borderRadius: BorderRadius.circular(AppThemeValues.radius),
+                  border: Border.all(color: AppColors.border, width: AppThemeValues.borderWidth),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -289,27 +294,34 @@ class OrderDetailScreen extends ConsumerWidget {
                       'Timeline',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w800,
+                        letterSpacing: -0.15,
                       ),
                     ),
-                    const SizedBox(height: 14),
-                    _TimelineRow(
-                      label: 'Created',
-                      value: _formatDate(order.createdAt),
+                    const SizedBox(height: 20),
+                    _buildTimelineNode(
+                      title: 'Order created',
+                      date: order.createdAt,
+                      isCompleted: true,
+                      isLast: false,
                     ),
-                    const SizedBox(height: 10),
-                    _TimelineRow(
-                      label: 'Paid',
-                      value: _formatDate(order.paidAt),
+                    _buildTimelineNode(
+                      title: order.paymentProvider == 'meetup' ? 'Payment during pickup' : 'Payment verified',
+                      date: order.paidAt,
+                      isCompleted: order.paidAt != null,
+                      isLast: false,
+                      pendingText: order.paymentProvider == 'meetup' ? 'Pending handoff & payment' : 'Awaiting payment',
                     ),
-                    const SizedBox(height: 10),
-                    _TimelineRow(
-                      label: 'Handed over',
-                      value: _formatDate(order.handedOverAt),
+                    _buildTimelineNode(
+                      title: 'Handed over by seller',
+                      date: order.handedOverAt,
+                      isCompleted: order.handedOverAt != null,
+                      isLast: false,
                     ),
-                    const SizedBox(height: 10),
-                    _TimelineRow(
-                      label: 'Completed',
-                      value: _formatDate(order.completedAt),
+                    _buildTimelineNode(
+                      title: 'Order completed',
+                      date: order.completedAt,
+                      isCompleted: order.completedAt != null,
+                      isLast: true,
                     ),
                   ],
                 ),
@@ -319,8 +331,8 @@ class OrderDetailScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(color: AppColors.border),
+                  borderRadius: BorderRadius.circular(AppThemeValues.radius),
+                  border: Border.all(color: AppColors.border, width: AppThemeValues.borderWidth),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -392,6 +404,78 @@ class OrderDetailScreen extends ConsumerWidget {
             child: Text(ErrorMapper.toAppException(error).message),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTimelineNode({
+    required String title,
+    required DateTime? date,
+    required bool isCompleted,
+    required bool isLast,
+    String pendingText = 'Pending',
+  }) {
+    final activeColor = AppColors.textPrimary;
+    final inactiveColor = AppColors.border;
+
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Column(
+            children: [
+              Container(
+                height: 14,
+                width: 14,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isCompleted ? activeColor : AppColors.surface,
+                  border: Border.all(
+                    color: isCompleted ? activeColor : inactiveColor,
+                    width: 1.5,
+                  ),
+                ),
+              ),
+              if (!isLast)
+                Expanded(
+                  child: Container(
+                    width: 1.5,
+                    color: isCompleted ? activeColor : inactiveColor,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(bottom: isLast ? 0 : 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                      color: isCompleted ? AppColors.textPrimary : AppColors.textSecondary,
+                      letterSpacing: -0.15,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    date != null ? _formatDate(date) : pendingText,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

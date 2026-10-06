@@ -49,7 +49,7 @@ Future<CheckoutSheetResult?> showMarketplaceCheckoutSheet({
     useSafeArea: true,
     backgroundColor: AppColors.surface,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppThemeValues.radiusLarge)),
     ),
     builder: (context) {
       return _MarketplaceCheckoutSheet(
@@ -352,8 +352,8 @@ class _CheckoutSection extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
+        border: Border.all(color: AppColors.border, width: AppThemeValues.borderWidth),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -515,60 +515,66 @@ class _CheckoutOptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final borderColor = selected ? AppColors.primary : AppColors.border;
+    final borderColor = selected ? AppColors.textPrimary : AppColors.border;
     final foreground = enabled
         ? AppColors.textPrimary
         : AppColors.textSecondary;
 
-    return Material(
-      color: selected ? AppColors.successSoft : AppColors.surfaceMuted,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: borderColor, width: selected ? 1.4 : 1),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                color: enabled
-                    ? AppColors.primaryDark
-                    : AppColors.textSecondary,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: foreground,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      subtitle,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppThemeValues.radius),
+        border: Border.all(color: borderColor, width: selected ? AppThemeValues.focusedBorderWidth : AppThemeValues.borderWidth),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: enabled ? onTap : null,
+          borderRadius: BorderRadius.circular(AppThemeValues.radius - 1),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                Icon(
+                  icon,
+                  color: enabled
+                      ? AppColors.textPrimary
+                      : AppColors.textSecondary,
+                  size: 20,
                 ),
-              ),
-              Icon(
-                selected
-                    ? Icons.radio_button_checked_rounded
-                    : Icons.radio_button_unchecked_rounded,
-                color: selected ? AppColors.primary : AppColors.textSecondary,
-              ),
-            ],
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: foreground,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.15,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        subtitle,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                          letterSpacing: -0.1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  selected
+                      ? Icons.radio_button_checked_rounded
+                      : Icons.radio_button_unchecked_rounded,
+                  color: selected ? AppColors.textPrimary : AppColors.textSecondary,
+                  size: 20,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -598,8 +604,8 @@ class _CheckoutTotalBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.primaryDark,
-        borderRadius: BorderRadius.circular(14),
+        color: AppColors.textPrimary,
+        borderRadius: BorderRadius.circular(AppThemeValues.radius),
       ),
       child: Column(
         children: [
@@ -659,7 +665,7 @@ class _CheckoutTotalFact extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppThemeValues.radiusSmall),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -17,6 +17,26 @@ class AppColors {
   static const Color error = Color(0xFFC62828);
 }
 
+class AppThemeValues {
+  // Border Radius
+  static const double radiusSmall = 8.0;
+  static const double radius = 12.0;
+  static const double radiusLarge = 16.0;
+  static const double radiusExtraLarge = 24.0;
+
+  // Borders
+  static const double borderWidth = 1.0;
+  static const double focusedBorderWidth = 1.2;
+
+  // Spacing / Margins / Paddings
+  static const double spacingTiny = 4.0;
+  static const double spacingSmall = 8.0;
+  static const double spacingMedium = 12.0;
+  static const double spacingLarge = 16.0;
+  static const double spacingExtraLarge = 24.0;
+  static const double spacingHuge = 32.0;
+}
+
 class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
@@ -46,17 +66,17 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
+          backgroundColor: AppColors.textPrimary,
           foregroundColor: AppColors.white,
           minimumSize: const Size.fromHeight(52),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppThemeValues.radius),
           ),
           elevation: 0,
           textStyle: const TextStyle(
             fontSize: 14,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.1,
           ),
         ),
       ),
@@ -64,14 +84,14 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.textPrimary,
           minimumSize: const Size.fromHeight(52),
-          side: const BorderSide(color: AppColors.border),
+          side: const BorderSide(color: AppColors.border, width: AppThemeValues.borderWidth),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppThemeValues.radius),
           ),
           textStyle: const TextStyle(
             fontSize: 14,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.1,
           ),
         ),
       ),
@@ -83,44 +103,46 @@ class AppTheme {
           vertical: 14,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.border, width: 1),
+          borderRadius: BorderRadius.circular(AppThemeValues.radius),
+          borderSide: const BorderSide(color: AppColors.border, width: AppThemeValues.borderWidth),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.2),
+          borderRadius: BorderRadius.circular(AppThemeValues.radius),
+          borderSide: const BorderSide(color: AppColors.textPrimary, width: AppThemeValues.focusedBorderWidth),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.error, width: 1),
+          borderRadius: BorderRadius.circular(AppThemeValues.radius),
+          borderSide: const BorderSide(color: AppColors.error, width: AppThemeValues.borderWidth),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.error, width: 1),
+          borderRadius: BorderRadius.circular(AppThemeValues.radius),
+          borderSide: const BorderSide(color: AppColors.error, width: AppThemeValues.borderWidth),
         ),
         hintStyle: const TextStyle(
           color: AppColors.textSecondary,
-          fontSize: 14,
+          fontSize: 14.5,
+          letterSpacing: -0.15,
         ),
         labelStyle: const TextStyle(
           color: AppColors.textSecondary,
-          fontSize: 14,
+          fontSize: 14.5,
+          letterSpacing: -0.15,
         ),
       ),
       cardTheme: CardThemeData(
         color: AppColors.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          side: const BorderSide(color: AppColors.border, width: 1),
-          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: AppColors.border, width: AppThemeValues.borderWidth),
+          borderRadius: BorderRadius.circular(AppThemeValues.radius),
         ),
         margin: EdgeInsets.zero,
       ),
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.surface,
         disabledColor: AppColors.surfaceMuted,
-        selectedColor: AppColors.primary,
-        secondarySelectedColor: AppColors.primary,
+        selectedColor: AppColors.textPrimary,
+        secondarySelectedColor: AppColors.textPrimary,
         side: const BorderSide(color: AppColors.border),
         shape: const StadiumBorder(),
         labelStyle: const TextStyle(

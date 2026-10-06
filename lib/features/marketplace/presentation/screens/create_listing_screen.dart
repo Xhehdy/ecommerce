@@ -225,8 +225,8 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: AppColors.border),
+                  borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
+                  border: Border.all(color: AppColors.border, width: AppThemeValues.borderWidth),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -252,7 +252,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                             Padding(
                               padding: const EdgeInsets.only(right: 10),
                               child: ClipRRect(
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(AppThemeValues.radius),
                                 child: SizedBox(
                                   height: 108,
                                   width: 108,
@@ -269,7 +269,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                                     height: 108,
                                     width: 108,
                                     decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(16),
+                                      borderRadius: BorderRadius.circular(AppThemeValues.radius),
                                       image: DecorationImage(
                                         image: FileImage(_newImages[i]),
                                         fit: BoxFit.cover,
@@ -279,23 +279,25 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                                   Positioned(
                                     right: 6,
                                     top: 6,
-                                    child: IconButton(
-                                      tooltip: 'Remove photo',
-                                      style: IconButton.styleFrom(
-                                        backgroundColor: Colors.black54,
-                                        minimumSize: const Size(24, 24),
-                                        padding: EdgeInsets.zero,
-                                      ),
-                                      iconSize: 16,
-                                      icon: const Icon(
-                                        Icons.close,
-                                        color: Colors.white,
-                                      ),
-                                      onPressed: () {
+                                    child: GestureDetector(
+                                      onTap: () {
                                         setState(() {
                                           _newImages.removeAt(i);
                                         });
                                       },
+                                      child: Container(
+                                        height: 24,
+                                        width: 24,
+                                        decoration: const BoxDecoration(
+                                          color: Colors.black54,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.close,
+                                          color: Colors.white,
+                                          size: 14,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -303,14 +305,14 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                             ),
                           InkWell(
                             onTap: _pickImage,
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(AppThemeValues.radius),
                             child: Container(
                               height: 108,
                               width: 108,
                               decoration: BoxDecoration(
                                 color: AppColors.surfaceMuted,
-                                border: Border.all(color: AppColors.border),
-                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: AppColors.border, width: AppThemeValues.borderWidth),
+                                borderRadius: BorderRadius.circular(AppThemeValues.radius),
                               ),
                               child: const Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -318,13 +320,16 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                                   Icon(
                                     Icons.add_a_photo_outlined,
                                     color: AppColors.textSecondary,
+                                    size: 22,
                                   ),
                                   SizedBox(height: 8),
                                   Text(
                                     'Add Photos',
                                     style: TextStyle(
                                       color: AppColors.textSecondary,
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 11,
+                                      letterSpacing: -0.1,
                                     ),
                                   ),
                                 ],
@@ -403,7 +408,7 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: AppColors.warningSoft,
-                        borderRadius: BorderRadius.circular(18),
+                        borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
                       ),
                       child: const Text(
                         'No categories are available yet. Apply the latest Supabase schema so listing categories can be selected.',
@@ -459,8 +464,8 @@ class _CreateListingScreenState extends ConsumerState<CreateListingScreen> {
               Container(
                 decoration: BoxDecoration(
                   color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: AppColors.border),
+                  borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
+                  border: Border.all(color: AppColors.border, width: AppThemeValues.borderWidth),
                 ),
                 child: SwitchListTile.adaptive(
                   value: _allowMeetupPayment,

@@ -131,7 +131,7 @@ class ProductDetailScreen extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge)),
         title: Row(
           children: [
             Container(
@@ -139,7 +139,7 @@ class ProductDetailScreen extends ConsumerWidget {
               width: 40,
               decoration: BoxDecoration(
                 color: AppColors.error.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppThemeValues.radius),
               ),
               alignment: Alignment.center,
               child: const Icon(
@@ -535,7 +535,7 @@ class ProductDetailScreen extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(22),
+                  borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
                   child: _ProductImageGallery(images: product.images),
                 ),
               ),
@@ -694,15 +694,8 @@ class _SellerSummaryCard extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.035),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(AppThemeValues.radius),
+        border: Border.all(color: AppColors.border, width: AppThemeValues.borderWidth),
       ),
       child: Row(
         children: [
@@ -710,7 +703,7 @@ class _SellerSummaryCard extends StatelessWidget {
             height: 64,
             width: 64,
             decoration: const BoxDecoration(
-              color: AppColors.primary,
+              color: AppColors.textPrimary,
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
@@ -718,7 +711,7 @@ class _SellerSummaryCard extends StatelessWidget {
               initials,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 24,
+                fontSize: 22,
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -754,11 +747,11 @@ class _SellerSummaryCard extends StatelessWidget {
                     if (hasCampusIdentity)
                       _TrustBadge(
                         label: 'Campus identity',
-                        icon: Icons.verified_user,
+                        icon: Icons.verified_user_rounded,
                       ),
                     _TrustBadge(
                       label: hasMeetup ? 'Meetup ready' : 'Campus pickup',
-                      icon: Icons.place_outlined,
+                      icon: Icons.place_rounded,
                     ),
                   ],
                 ),
@@ -786,8 +779,8 @@ class _SellerSummaryLoading extends StatelessWidget {
       height: 114,
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(AppThemeValues.radius),
+        border: Border.all(color: AppColors.border, width: AppThemeValues.borderWidth),
       ),
       child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
     );
@@ -849,8 +842,8 @@ class _SafetyCard extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
+        border: Border.all(color: AppColors.border, width: AppThemeValues.borderWidth),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -949,8 +942,8 @@ class _CheckoutOfferCard extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
+        border: Border.all(color: AppColors.border, width: AppThemeValues.borderWidth),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -962,7 +955,7 @@ class _CheckoutOfferCard extends StatelessWidget {
                 width: 42,
                 decoration: BoxDecoration(
                   color: AppColors.surfaceMuted,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(AppThemeValues.radiusSmall),
                 ),
                 child: const Icon(
                   Icons.shopping_bag_outlined,
@@ -1089,7 +1082,7 @@ class _OfferFact extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: warning ? AppColors.warningSoft : AppColors.surfaceMuted,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppThemeValues.radius),
       ),
       child: Row(
         children: [
@@ -1311,8 +1304,8 @@ class _ProductDetailsSection extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
+        border: Border.all(color: AppColors.border, width: AppThemeValues.borderWidth),
       ),
       child: Column(
         children: [
@@ -1384,7 +1377,7 @@ class _ProductDetailTile extends StatelessWidget {
           width: 42,
           decoration: BoxDecoration(
             color: AppColors.surfaceMuted,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppThemeValues.radiusSmall),
           ),
           child: Icon(icon, color: AppColors.primaryDark, size: 23),
         ),

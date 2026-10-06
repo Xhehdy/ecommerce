@@ -116,14 +116,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: AppColors.primaryDark,
-                    borderRadius: BorderRadius.circular(22),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primaryDark.withValues(alpha: 0.2),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                    borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
                   ),
                   child: Column(
                     children: [
@@ -188,7 +181,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   ),
                                   decoration: BoxDecoration(
                                     color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(AppThemeValues.radiusSmall),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
@@ -276,8 +269,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.border),
+                      borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
+                      border: Border.all(color: AppColors.border, width: AppThemeValues.borderWidth),
                     ),
                     child: Row(
                       children: [
@@ -321,7 +314,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               vertical: 8,
                             ),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(AppThemeValues.radiusSmall),
                             ),
                           ),
                           child: const Text(
@@ -345,8 +338,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 Container(
                   decoration: BoxDecoration(
                     color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.border),
+                    borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
+                    border: Border.all(color: AppColors.border, width: AppThemeValues.borderWidth),
                   ),
                   child: Column(
                     children: [
@@ -403,8 +396,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 Container(
                   decoration: BoxDecoration(
                     color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.border),
+                    borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
+                    border: Border.all(color: AppColors.border, width: AppThemeValues.borderWidth),
                   ),
                   child: Column(
                     children: [
@@ -511,8 +504,8 @@ class _MissingProfileState extends StatelessWidget {
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: AppColors.surface,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: AppColors.border),
+            borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
+            border: Border.all(color: AppColors.border, width: AppThemeValues.borderWidth),
           ),
           child: Column(
             children: [
@@ -788,7 +781,7 @@ class _EditProfileSheetState extends ConsumerState<_EditProfileSheet> {
       ),
       decoration: const BoxDecoration(
         color: AppColors.background,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppThemeValues.radiusLarge)),
       ),
       child: SafeArea(
         top: false,

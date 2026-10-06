@@ -39,8 +39,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               color: AppColors.surface,
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: AppColors.border),
+              borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
+              border: Border.all(color: AppColors.border, width: AppThemeValues.borderWidth),
             ),
             child: Column(
               children: [
@@ -105,8 +105,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           Container(
             decoration: BoxDecoration(
               color: AppColors.surface,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.border),
+              borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
+              border: Border.all(color: AppColors.border, width: AppThemeValues.borderWidth),
             ),
             child: Column(
               children: [

@@ -77,8 +77,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.border),
+                  borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
+                  border: Border.all(color: AppColors.border, width: AppThemeValues.borderWidth),
                 ),
                 child: Column(
                   children: [

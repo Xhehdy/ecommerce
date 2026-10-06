@@ -443,8 +443,8 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                     padding: const EdgeInsets.all(28),
                     decoration: BoxDecoration(
                       color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: AppColors.border),
+                      borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
+                      border: Border.all(color: AppColors.border, width: AppThemeValues.borderWidth),
                     ),
                     child: Column(
                       children: [
@@ -580,8 +580,8 @@ class _SavedSummary extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
+        border: Border.all(color: AppColors.border, width: AppThemeValues.borderWidth),
       ),
       child: Row(
         children: [
@@ -590,7 +590,7 @@ class _SavedSummary extends StatelessWidget {
             width: 42,
             decoration: BoxDecoration(
               color: AppColors.surfaceMuted,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(AppThemeValues.radiusSmall),
             ),
             child: const Icon(
               Icons.shopping_bag_outlined,
@@ -651,24 +651,24 @@ class _SavedCheckoutCard extends StatelessWidget {
 
     return Material(
       color: AppColors.surface,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
         onTap: product.canOrder ? () => onSelected(!selected) : onOpen,
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(AppThemeValues.radiusLarge),
             border: Border.all(
               color: selected ? AppColors.primary : AppColors.border,
-              width: selected ? 1.5 : 1,
+              width: selected ? AppThemeValues.focusedBorderWidth : AppThemeValues.borderWidth,
             ),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(AppThemeValues.radiusSmall),
                 child: SizedBox(
                   height: 104,
                   width: 92,
@@ -831,7 +831,7 @@ class _MiniPill extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
         decoration: BoxDecoration(
           color: warning ? AppColors.warningSoft : AppColors.surfaceMuted,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(AppThemeValues.radiusSmall),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -883,6 +883,15 @@ class _QuantityButton extends StatelessWidget {
       constraints: const BoxConstraints.tightFor(width: 36, height: 36),
       padding: EdgeInsets.zero,
       icon: Icon(icon, size: 18),
+      style: IconButton.styleFrom(
+        side: const BorderSide(
+          color: AppColors.border,
+          width: AppThemeValues.borderWidth,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppThemeValues.radiusSmall),
+        ),
+      ),
     );
   }
 }
@@ -908,7 +917,12 @@ class _SavedCheckoutBar extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
         decoration: const BoxDecoration(
           color: AppColors.surface,
-          border: Border(top: BorderSide(color: AppColors.border)),
+          border: Border(
+            top: BorderSide(
+              color: AppColors.border,
+              width: AppThemeValues.borderWidth,
+            ),
+          ),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
